@@ -1,0 +1,20 @@
+[package]
+name = "candle-neat"
+description = "A library that uses candle-rs under the hood for training/testing NEAT"
+repository = "https://github.com/dsgallups/candle-neat"
+readme = "README.md"
+authors = ["Daniel Gallups <dsgallups@protonmail.com>"]
+keywords = [
+    "Genetic algorithms",
+    "neural networks",
+    "neuroevolution",
+    "network topologies",
+    "speciation",
+    "competing conventions",
+]
+license = "MIT"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+candle-core = "0.6.0"
