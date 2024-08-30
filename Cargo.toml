@@ -5,12 +5,11 @@ repository = "https://github.com/dsgallups/candle-neat"
 readme = "README.md"
 authors = ["Daniel Gallups <dsgallups@protonmail.com>"]
 keywords = [
-    "Genetic algorithms",
-    "neural networks",
+    "genetic_algorithms",
+    "neural_networks",
     "neuroevolution",
-    "network topologies",
+    "network_topologies",
     "speciation",
-    "competing conventions",
 ]
 license = "MIT"
 version = "0.1.0"
