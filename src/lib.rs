@@ -1,14 +1,12 @@
-pub fn add(left: u64, right: u64) -> u64 {
-    left + right
-}
+pub mod feed_forward;
+pub mod genome;
+pub mod prelude;
+pub mod runnable;
+pub mod simple;
+pub mod topology;
 
-#[cfg(test)]
-mod tests {
-    use super::*;
+pub use genetic_rs::prelude::*;
+pub use runnable::*;
+pub use topology::*;
 
-    #[test]
-    fn it_works() {
-        let result = add(2, 2);
-        assert_eq!(result, 4);
-    }
-}
+pub use nnt_serde::*;
