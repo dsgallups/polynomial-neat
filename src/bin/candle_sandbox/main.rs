@@ -19,7 +19,7 @@ impl Model {
 }
 
 fn main() -> Result<()> {
-    let device = Device::new_cuda(0)?;
+    let device = Device::Cpu;
     let model = Model::example(&device)?;
 
     let dummy_image = Tensor::randn(0f32, 1.0, (1, 784), &device)?;
@@ -29,11 +29,4 @@ fn main() -> Result<()> {
     println!("digit: {:?}", digit);
 
     Ok(())
-}
-
-#[test]
-fn test_dev() {
-    let device = Device::cuda_if_available(ordinal).unwrap();
-
-    println!("Device: {:?}");
 }

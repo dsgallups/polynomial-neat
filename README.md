@@ -8,6 +8,7 @@ K. O. Stanley and R. Miikkulainen, "Evolving Neural Networks through Augmenting 
 
 - [ ] Core implementation
   - [ ] Candle
+    - Awaiting CUDA 12.6 support
   - [ ] nalgebra
   - [ ] topology
 - [ ] Feed Forward Net
