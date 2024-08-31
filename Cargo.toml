@@ -14,6 +14,14 @@ keywords = [
 license = "MIT"
 version = "0.1.0"
 edition = "2021"
+default-run = "candle_sandbox"
+
+[[bin]]
+name = "candle_sandbox"
+
+[[bin]]
+name = "lib_sandbox"
 
 [dependencies]
-candle-core = "0.6.0"
+candle-core = { version = "0.6.0", features = ["cuda"] }
+# nalgebra = "0.33.0"
