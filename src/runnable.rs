@@ -1,52 +1,20 @@
 use crate::topology::*;
 
-#[cfg(not(feature = "rayon"))]
-use std::{cell::RefCell, rc::Rc};
-
-#[cfg(feature = "rayon")]
 use rayon::prelude::*;
-#[cfg(feature = "rayon")]
-use std::sync::{Arc, RwLock};
+use std::sync::RwLock;
 
 /// A runnable, stated Neural Network generated from a [NeuralNetworkTopology]. Use [`NeuralNetwork::from`] to go from stateles to runnable.
 /// Because this has state, you need to run [`NeuralNetwork::flush_state`] between [`NeuralNetwork::predict`] calls.
-#[derive(Debug)]
-#[cfg(not(feature = "rayon"))]
-pub struct NeuralNetwork<const I: usize, const O: usize> {
-    input_layer: [Rc<RefCell<Neuron>>; I],
-    hidden_layers: Vec<Rc<RefCell<Neuron>>>,
-    output_layer: [Rc<RefCell<Neuron>>; O],
-}
-
 /// Parallelized version of the [`NeuralNetwork`] struct.
 #[derive(Debug)]
-#[cfg(feature = "rayon")]
-pub struct NeuralNetwork<const I: usize, const O: usize> {
-    input_layer: [Arc<RwLock<Neuron>>; I],
-    hidden_layers: Vec<Arc<RwLock<Neuron>>>,
-    output_layer: [Arc<RwLock<Neuron>>; O],
+pub struct NeuralNetwork<'f, const I: usize, const O: usize> {
+    input_layer: [RwLock<Neuron<'f>>; I],
+    hidden_layers: Vec<RwLock<Neuron<'f>>>,
+    output_layer: [RwLock<Neuron<'f>>; O],
 }
 
-impl<const I: usize, const O: usize> NeuralNetwork<I, O> {
-    /// Predicts an output for the given inputs.
-    #[cfg(not(feature = "rayon"))]
-    pub fn predict(&self, inputs: [f32; I]) -> [f32; O] {
-        for (i, v) in inputs.iter().enumerate() {
-            let mut nw = self.input_layer[i].borrow_mut();
-            nw.state.value = *v;
-            nw.state.processed = true;
-        }
-
-        (0..O)
-            .map(NeuronLocation::Output)
-            .map(|loc| self.process_neuron(loc))
-            .collect::<Vec<_>>()
-            .try_into()
-            .unwrap()
-    }
-
+impl<'f, const I: usize, const O: usize> NeuralNetwork<'f, I, O> {
     /// Parallelized prediction of outputs from inputs.
-    #[cfg(feature = "rayon")]
     pub fn predict(&self, inputs: [f32; I]) -> [f32; O] {
         inputs.par_iter().enumerate().for_each(|(i, v)| {
             let mut nw = self.input_layer[i].write().unwrap();
@@ -64,30 +32,6 @@ impl<const I: usize, const O: usize> NeuralNetwork<I, O> {
             .unwrap()
     }
 
-    #[cfg(not(feature = "rayon"))]
-    fn process_neuron(&self, loc: NeuronLocation) -> f32 {
-        let n = self.get_neuron(loc);
-
-        {
-            let nr = n.borrow();
-
-            if nr.state.processed {
-                return nr.state.value;
-            }
-        }
-
-        let mut n = n.borrow_mut();
-
-        for (l, w) in n.inputs.clone() {
-            n.state.value += self.process_neuron(l) * w;
-        }
-
-        n.activate();
-
-        n.state.value
-    }
-
-    #[cfg(feature = "rayon")]
     fn process_neuron(&self, loc: NeuronLocation) -> f32 {
         let n = self.get_neuron(loc);
 
@@ -117,42 +61,15 @@ impl<const I: usize, const O: usize> NeuralNetwork<I, O> {
         nw.state.value
     }
 
-    #[cfg(not(feature = "rayon"))]
-    fn get_neuron(&self, loc: NeuronLocation) -> Rc<RefCell<Neuron>> {
+    fn get_neuron(&self, loc: NeuronLocation) -> &RwLock<Neuron<'f>> {
         match loc {
-            NeuronLocation::Input(i) => self.input_layer[i].clone(),
-            NeuronLocation::Hidden(i) => self.hidden_layers[i].clone(),
-            NeuronLocation::Output(i) => self.output_layer[i].clone(),
-        }
-    }
-
-    #[cfg(feature = "rayon")]
-    fn get_neuron(&self, loc: NeuronLocation) -> Arc<RwLock<Neuron>> {
-        match loc {
-            NeuronLocation::Input(i) => self.input_layer[i].clone(),
-            NeuronLocation::Hidden(i) => self.hidden_layers[i].clone(),
-            NeuronLocation::Output(i) => self.output_layer[i].clone(),
+            NeuronLocation::Input(i) => &self.input_layer[i],
+            NeuronLocation::Hidden(i) => &self.hidden_layers[i],
+            NeuronLocation::Output(i) => &self.output_layer[i],
         }
     }
 
     /// Flushes the network's state after a [prediction][NeuralNetwork::predict].
-    #[cfg(not(feature = "rayon"))]
-    pub fn flush_state(&self) {
-        for n in &self.input_layer {
-            n.borrow_mut().flush_state();
-        }
-
-        for n in &self.hidden_layers {
-            n.borrow_mut().flush_state();
-        }
-
-        for n in &self.output_layer {
-            n.borrow_mut().flush_state();
-        }
-    }
-
-    /// Flushes the neural network's state.
-    #[cfg(feature = "rayon")]
     pub fn flush_state(&self) {
         self.input_layer
             .par_iter()
@@ -168,13 +85,14 @@ impl<const I: usize, const O: usize> NeuralNetwork<I, O> {
     }
 }
 
-impl<const I: usize, const O: usize> From<&NeuralNetworkTopology<I, O>> for NeuralNetwork<I, O> {
-    #[cfg(not(feature = "rayon"))]
-    fn from(value: &NeuralNetworkTopology<I, O>) -> Self {
+impl<'a, const I: usize, const O: usize> From<&NeuralNetworkTopology<'a, I, O>>
+    for NeuralNetwork<'a, I, O>
+{
+    fn from(value: &NeuralNetworkTopology<'a, I, O>) -> Self {
         let input_layer = value
             .input_layer
             .iter()
-            .map(|n| Rc::new(RefCell::new(Neuron::from(&n.read().unwrap().clone()))))
+            .map(|n| RwLock::new(Neuron::from(n)))
             .collect::<Vec<_>>()
             .try_into()
             .unwrap();
@@ -182,44 +100,13 @@ impl<const I: usize, const O: usize> From<&NeuralNetworkTopology<I, O>> for Neur
         let hidden_layers = value
             .hidden_layers
             .iter()
-            .map(|n| Rc::new(RefCell::new(Neuron::from(&n.read().unwrap().clone()))))
+            .map(|n| RwLock::new(Neuron::from(n)))
             .collect();
 
         let output_layer = value
             .output_layer
             .iter()
-            .map(|n| Rc::new(RefCell::new(Neuron::from(&n.read().unwrap().clone()))))
-            .collect::<Vec<_>>()
-            .try_into()
-            .unwrap();
-
-        Self {
-            input_layer,
-            hidden_layers,
-            output_layer,
-        }
-    }
-
-    #[cfg(feature = "rayon")]
-    fn from(value: &NeuralNetworkTopology<I, O>) -> Self {
-        let input_layer = value
-            .input_layer
-            .iter()
-            .map(|n| Arc::new(RwLock::new(Neuron::from(&n.read().unwrap().clone()))))
-            .collect::<Vec<_>>()
-            .try_into()
-            .unwrap();
-
-        let hidden_layers = value
-            .hidden_layers
-            .iter()
-            .map(|n| Arc::new(RwLock::new(Neuron::from(&n.read().unwrap().clone()))))
-            .collect();
-
-        let output_layer = value
-            .output_layer
-            .iter()
-            .map(|n| Arc::new(RwLock::new(Neuron::from(&n.read().unwrap().clone()))))
+            .map(|n| RwLock::new(Neuron::from(n)))
             .collect::<Vec<_>>()
             .try_into()
             .unwrap();
@@ -234,7 +121,7 @@ impl<const I: usize, const O: usize> From<&NeuralNetworkTopology<I, O>> for Neur
 
 /// A state-filled neuron.
 #[derive(Clone, Debug)]
-pub struct Neuron {
+pub struct Neuron<'f> {
     inputs: Vec<(NeuronLocation, f32)>,
     bias: f32,
 
@@ -242,10 +129,10 @@ pub struct Neuron {
     pub state: NeuronState,
 
     /// The neuron's activation function
-    pub activation: ActivationFn,
+    pub activation: ActivationFn<'f>,
 }
 
-impl Neuron {
+impl<'f> Neuron<'f> {
     /// Flushes a neuron's state. Called by [`NeuralNetwork::flush_state`]
     pub fn flush_state(&mut self) {
         self.state.value = self.bias;
@@ -257,8 +144,8 @@ impl Neuron {
     }
 }
 
-impl From<&NeuronTopology> for Neuron {
-    fn from(value: &NeuronTopology) -> Self {
+impl<'f> From<&NeuronTopology<'f>> for Neuron<'f> {
+    fn from(value: &NeuronTopology<'f>) -> Self {
         Self {
             inputs: value.inputs.clone(),
             bias: value.bias,

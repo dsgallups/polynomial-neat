@@ -1,11 +1,10 @@
-#[cfg(feature = "serde")]
 use serde::{Deserialize, Deserializer, Serialize, Serializer};
 
 use bitflags::bitflags;
 use std::{
     collections::HashMap,
     fmt,
-    sync::{Arc, LazyLock, RwLock},
+    sync::{LazyLock, RwLock},
 };
 
 use crate::prelude::*;
@@ -14,11 +13,11 @@ use crate::prelude::*;
 #[macro_export]
 macro_rules! activation_fn {
     ($F: path) => {
-        ActivationFn::new(Arc::new($F), ActivationScope::default(), stringify!($F).into())
+        ActivationFn::new(&$F, ActivationScope::default(), stringify!($F).into())
     };
 
     ($F: path, $S: expr) => {
-        ActivationFn::new(Arc::new($F), $S, stringify!($F).into())
+        ActivationFn::new(&$F, $S, stringify!($F).into())
     };
 
     {$($F: path),*} => {
@@ -30,51 +29,49 @@ macro_rules! activation_fn {
     }
 }
 
-pub static TEST_THING: LazyLock<String> = LazyLock::new(|| "hello".to_string());
-
 pub static ACTIVATION_REGISTRY: LazyLock<RwLock<ActivationRegistry>> =
     LazyLock::new(|| RwLock::new(ActivationRegistry::default()));
 
 //pub static ACTIVATION_REGISTRY: LazyLock<Arc<RwLock<ActivationRegistry>> = LazyLock::new();
 
 /// Register an activation function to the registry.
-pub fn register_activation(act: ActivationFn) {
+pub fn register_activation(act: ActivationFn<'static>) {
     let mut reg = ACTIVATION_REGISTRY.write().unwrap();
     reg.register(act);
 }
 
 /// Registers multiple activation functions to the registry at once.
-pub fn batch_register_activation(acts: impl IntoIterator<Item = ActivationFn>) {
+pub fn batch_register_activation(acts: impl IntoIterator<Item = ActivationFn<'static>>) {
     let mut reg = ACTIVATION_REGISTRY.write().unwrap();
     reg.batch_register(acts);
 }
 
 /// A registry of the different possible activation functions.
-pub struct ActivationRegistry {
+pub struct ActivationRegistry<'f> {
     /// The currently-registered activation functions.
-    pub fns: HashMap<String, ActivationFn>,
+    pub fns: HashMap<&'f str, ActivationFn<'f>>,
 }
 
-impl ActivationRegistry {
+impl<'f> ActivationRegistry<'f> {
     /// Registers an activation function.
-    pub fn register(&mut self, activation: ActivationFn) {
-        self.fns.insert(activation.name.clone(), activation);
+    pub fn register(&mut self, activation: ActivationFn<'f>) {
+        self.fns.insert(activation.name, activation);
     }
 
     /// Registers multiple activation functions at once.
-    pub fn batch_register(&mut self, activations: impl IntoIterator<Item = ActivationFn>) {
+    pub fn batch_register(&mut self, activations: impl IntoIterator<Item = ActivationFn<'f>>) {
         for act in activations {
             self.register(act);
         }
     }
 
     /// Gets a Vec of all the activation functions registered. Unless you need an owned value, use [fns][ActivationRegistry::fns].values() instead.
-    pub fn activations(&self) -> Vec<ActivationFn> {
+    pub fn activations(&self) -> Vec<ActivationFn<'f>> {
         self.fns.values().cloned().collect()
     }
 
     /// Gets all activation functions that are valid for a scope.
-    pub fn activations_in_scope(&self, scope: ActivationScope) -> Vec<ActivationFn> {
+    pub fn activations_in_scope(&self, scope: ActivationScope) -> Vec<ActivationFn<'f>> {
         let acts = self.activations();
 
         acts.into_iter()
@@ -83,7 +80,7 @@ impl ActivationRegistry {
     }
 }
 
-impl Default for ActivationRegistry {
+impl<'f> Default for ActivationRegistry<'f> {
     fn default() -> Self {
         let mut s = Self {
             fns: HashMap::new(),
@@ -135,12 +132,15 @@ impl From<&NeuronLocation> for ActivationScope {
 }
 
 /// A trait that represents an activation method.
-pub trait Activation {
+pub trait Activation: Sync {
     /// The activation function.
     fn activate(&self, n: f32) -> f32;
 }
 
-impl<F: Fn(f32) -> f32> Activation for F {
+impl<F> Activation for F
+where
+    F: Fn(f32) -> f32 + Sync,
+{
     fn activate(&self, n: f32) -> f32 {
         (self)(n)
     }
@@ -148,47 +148,44 @@ impl<F: Fn(f32) -> f32> Activation for F {
 
 /// An activation function object that implements [`fmt::Debug`] and is [`Send`]
 #[derive(Clone)]
-pub struct ActivationFn {
+pub struct ActivationFn<'f> {
     /// The actual activation function.
-    pub func: Arc<dyn Activation + Send + Sync>,
+    pub func: &'f dyn Activation,
 
     /// The scope defining where the activation function can appear.
     pub scope: ActivationScope,
-    pub(crate) name: String,
+    pub(crate) name: &'f str,
 }
 
-impl ActivationFn {
+impl<'f> ActivationFn<'f> {
     /// Creates a new ActivationFn object.
-    pub fn new(
-        func: Arc<dyn Activation + Send + Sync>,
-        scope: ActivationScope,
-        name: String,
-    ) -> Self {
+    pub fn new<F>(func: &'f F, scope: ActivationScope, name: &'f str) -> Self
+    where
+        F: Activation,
+    {
         Self { func, name, scope }
     }
 }
 
-impl fmt::Debug for ActivationFn {
+impl<'f> fmt::Debug for ActivationFn<'f> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         writeln!(f, "{}", self.name)
     }
 }
 
-impl PartialEq for ActivationFn {
+impl<'f> PartialEq for ActivationFn<'f> {
     fn eq(&self, other: &Self) -> bool {
         self.name == other.name
     }
 }
 
-#[cfg(feature = "serde")]
-impl Serialize for ActivationFn {
+impl<'f> Serialize for ActivationFn<'f> {
     fn serialize<S: Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
-        serializer.serialize_str(&self.name)
+        serializer.serialize_str(self.name)
     }
 }
 
-#[cfg(feature = "serde")]
-impl<'a> Deserialize<'a> for ActivationFn {
+impl<'f, 'a> Deserialize<'a> for ActivationFn<'f> {
     fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
     where
         D: Deserializer<'a>,
@@ -197,7 +194,7 @@ impl<'a> Deserialize<'a> for ActivationFn {
 
         let reg = ACTIVATION_REGISTRY.read().unwrap();
 
-        let f = reg.fns.get(&name);
+        let f = reg.fns.get(name.as_str());
 
         if f.is_none() {
             panic!("Activation function {name} not found");

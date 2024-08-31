@@ -9,5 +9,4 @@ pub use genetic_rs::prelude::*;
 pub use runnable::*;
 pub use topology::*;
 
-#[cfg(feature = "serde")]
 pub use nnt_serde::*;

@@ -3,6 +3,7 @@ name = "candle-neat"
 description = "A library that uses candle-rs under the hood for training/testing NEAT"
 repository = "https://github.com/dsgallups/candle-neat"
 readme = "README.md"
+rust-version = "1.80"
 authors = ["Daniel Gallups <dsgallups@protonmail.com>"]
 keywords = [
     "genetic_algorithms",
@@ -26,19 +27,17 @@ name = "lib_sandbox"
 
 [features]
 crossover = ["genetic-rs/crossover"]
-serde = ["dep:serde", "dep:serde-big-array"]
-rayon = ["genetic-rs/rayon", "dep:rayon"]
 max-index = []
 
 
 [dependencies]
+serde = { version = "1.0", features = ["derive"] }
+serde-big-array = { version = "0.5.1" }
 bitflags = "2.6.0"
 candle-core = { version = "0.6.0" }
 genetic-rs = { version = "0.5.3", features = ["derive"] }
 rand = "0.8.5"
-rayon = { version = "1.10.0", optional = true }
-serde = { version = "1.0", features = ["derive"], optional = true }
-serde-big-array = { version = "0.5.1", optional = true }
+rayon = { version = "1.10.0" }
 # nalgebra = "0.33.0"
 
 
