@@ -7,13 +7,12 @@ pub mod neuron;
 #[cfg(feature = "serde")]
 use serde::{Deserialize, Serialize};
 
+use crate::prelude::TopologyReplicator;
+
 #[derive(Clone, Debug, PartialEq)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub struct NetworkTopology {
     neurons: Vec<NeuronTopology>,
-    input_layer: Vec<usize>,
-    output_layer: Vec<usize>,
-
     mutation_rate: f32,
     mutation_passes: u32,
 }
@@ -27,7 +26,7 @@ impl NetworkTopology {
         rng: &mut impl Rng,
     ) -> Self {
         let neurons = (0..num_inputs)
-            .map(|_| NeuronTopology::input_node_rand(&mut rand::thread_rng()))
+            .map(|_| NeuronTopology::input())
             .chain((0..num_outputs).map(|_| {
                 //a random number of connections to random input neurons;
                 let mut chosen_inputs = (0..rng.gen_range(1..num_inputs))
@@ -40,39 +39,29 @@ impl NetworkTopology {
                 chosen_inputs.sort_by_key(|top| top.topology_index());
                 chosen_inputs.dedup_by_key(|top| top.topology_index());
 
-                NeuronTopology::new_rand(chosen_inputs, &mut rand::thread_rng())
+                NeuronTopology::output_rand(chosen_inputs, &mut rand::thread_rng())
             }))
             .collect::<Vec<_>>();
 
         Self {
             neurons,
-            input_layer: (0..num_inputs).collect(),
-            output_layer: (num_inputs..(num_inputs + num_outputs)).collect(),
             mutation_rate,
             mutation_passes,
         }
     }
-}
 
-#[test]
-fn test_neuron_locations() {
-    use activation::Activation;
-    // this is a flaky (non-deterministic) test. provided randomness may effect the outcome of the output_i input nodes. This test should be removed.
-    // rng will not effect the input linear activation function
-    // nor correct indexes into the adj array for the input layers.
-    let topology = NetworkTopology::new(5, 6, 0., 0, &mut rand::thread_rng());
-
-    for input_i in topology.input_layer.iter() {
-        let input_neuron = topology.neurons.get(*input_i).unwrap();
-        // always linear
-        assert_eq!(input_neuron.activation(), Activation::Linear);
+    pub fn replicate(&self, rng: &mut impl Rng) -> Self {
+        TopologyReplicator::new(self).replicate(rng)
     }
 
-    for output_i in topology.output_layer.iter() {
-        let output_neuron = topology.neurons.get(*output_i).unwrap();
-        for input in output_neuron.inputs() {
-            // flaky
-            assert!(topology.input_layer.contains(&input.topology_index()))
-        }
+    pub fn neurons(&self) -> &[NeuronTopology] {
+        &self.neurons
+    }
+
+    pub fn mutation_rate(&self) -> f32 {
+        self.mutation_rate
+    }
+    pub fn mutation_passes(&self) -> u32 {
+        self.mutation_passes
     }
 }
