@@ -16,10 +16,9 @@ pub enum MutationAction {
     SplitConnection,
     Add,
     Remove,
-    MutateConnection,
+    MutateWeight,
     MutateBias,
     MutateActivationFunction,
-    MutateWeight,
 }
 
 trait MutationRateExt {
@@ -35,14 +34,13 @@ impl<T: Rng> MutationRateExt for T {
 
     fn gen_mutation_action(&mut self) -> MutationAction {
         use MutationAction::*;
-        match self.gen_range(0..7) {
+        match self.gen_range(0..6) {
             0 => SplitConnection,
             1 => Add,
             2 => Remove,
-            3 => MutateConnection,
+            3 => MutateWeight,
             4 => MutateBias,
             5 => MutateActivationFunction,
-            6 => MutateWeight,
             // Safety: Cannot generate a value more than 5
             _ => unsafe { unreachable_unchecked() },
         }
@@ -144,7 +142,6 @@ impl NeuronReplicants {
                     };
                     *bias += rng.gen_range(-1.0..=1.0);
                 }
-                _ => todo!(),
             }
 
             mutation_count += 1;
