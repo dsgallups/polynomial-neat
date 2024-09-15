@@ -1,4 +1,5 @@
 use std::{
+    collections::HashSet,
     hint::unreachable_unchecked,
     sync::{Arc, RwLock, Weak},
 };
@@ -145,14 +146,50 @@ impl NeuronReplicants {
 
             mutation_count += 1;
         }
-        self.remove_cycles()
     }
 
     pub fn remove_cycles(&mut self) {
-        todo!();
+        let mut visited = HashSet::new();
+        let mut stack = HashSet::new();
+
+        fn dfs(node: &mut NeuronReplicant, visited: &mut HashSet<Uuid>, stack: &mut HashSet<Uuid>) {
+            visited.insert(node.id());
+            stack.insert(node.id());
+
+            let ids_to_remove = if let Some(inputs) = node.inputs() {
+                let mut to_remove: Vec<Uuid> = Vec::new();
+                for input in inputs {
+                    let Some(input_neuron) = input.neuron() else {
+                        // neuron has been dropped already
+                        continue;
+                    };
+                    let input_neuron_id = input_neuron.read().unwrap().id();
+                    if !visited.contains(&input_neuron_id) {
+                        dfs(&mut input_neuron.write().unwrap(), visited, stack);
+                    } else if stack.contains(&input_neuron_id) {
+                        to_remove.push(input_neuron_id);
+                    }
+                }
+                to_remove
+            } else {
+                vec![]
+            };
+
+            node.trim_inputs(ids_to_remove);
+
+            stack.remove(&node.id());
+        }
+
+        for replicant in self.0.iter() {
+            let replicant_id = replicant.read().unwrap().id();
+            if !visited.contains(&replicant_id) {
+                dfs(&mut replicant.write().unwrap(), &mut visited, &mut stack);
+            }
+        }
     }
 
-    pub fn into_network_topology(self) -> NetworkTopology {
+    pub fn into_network_topology(mut self) -> NetworkTopology {
+        self.remove_cycles();
         todo!();
     }
 }
@@ -169,6 +206,10 @@ impl InputReplicant {
 
     pub fn neuron_id(&self) -> Option<Uuid> {
         Weak::upgrade(&self.input).map(|rep| rep.read().unwrap().id())
+    }
+
+    pub fn neuron(&self) -> Option<Arc<RwLock<NeuronReplicant>>> {
+        Weak::upgrade(&self.input)
     }
 }
 pub enum NeuronTypeReplicant {
@@ -210,6 +251,39 @@ impl NeuronTypeReplicant {
             Input => panic!("Cannot add input to an input node!"),
             Hidden { ref mut inputs, .. } | Output { ref mut inputs, .. } => {
                 inputs.push(input);
+            }
+        }
+    }
+    pub fn inputs(&self) -> Option<&[InputReplicant]> {
+        use NeuronTypeReplicant::*;
+        match self {
+            Input => None,
+            Hidden { ref inputs, .. } | Output { ref inputs, .. } => Some(inputs),
+        }
+    }
+
+    pub fn inputs_mut(&mut self) -> Option<&mut Vec<InputReplicant>> {
+        use NeuronTypeReplicant::*;
+        match self {
+            Input => None,
+            Hidden { ref mut inputs, .. } | Output { ref mut inputs, .. } => Some(inputs),
+        }
+    }
+
+    // Clears out all inputs whose reference is dropped or match on the provided ids
+    pub fn trim_inputs(&mut self, ids: Vec<Uuid>) {
+        use NeuronTypeReplicant::*;
+        match self {
+            Input => {}
+            Hidden { ref mut inputs, .. } | Output { ref mut inputs, .. } => {
+                inputs.retain(|input| {
+                    let Some(input) = input.neuron() else {
+                        return false;
+                    };
+                    let input = input.read().unwrap();
+
+                    !ids.contains(&input.id())
+                });
             }
         }
     }
@@ -397,6 +471,14 @@ impl NeuronReplicant {
         self.neuron_type.add_input(input)
     }
 
+    pub fn inputs(&self) -> Option<&[InputReplicant]> {
+        self.neuron_type.inputs()
+    }
+
+    pub fn inputs_mut(&mut self) -> Option<&mut Vec<InputReplicant>> {
+        self.neuron_type.inputs_mut()
+    }
+
     pub fn is_output(&self) -> bool {
         self.neuron_type.is_output()
     }
@@ -405,5 +487,9 @@ impl NeuronReplicant {
     }
     pub fn is_hidden(&self) -> bool {
         self.neuron_type.is_hidden()
+    }
+
+    pub fn trim_inputs(&mut self, ids: Vec<Uuid>) {
+        self.neuron_type.trim_inputs(ids)
     }
 }
