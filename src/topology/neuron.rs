@@ -13,13 +13,6 @@ pub struct NeuronTopology {
     activation: Activation,
 }
 
-#[derive(Clone, Debug, PartialEq)]
-#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
-pub struct InputTopology {
-    topology_index: usize,
-    weight: f32,
-}
-
 impl NeuronTopology {
     pub fn inputless_rand(rng: &mut impl Rng) -> Self {
         Self {
@@ -58,5 +51,28 @@ impl NeuronTopology {
 
     pub fn activation(&self) -> Activation {
         self.activation
+    }
+    pub fn inputs(&self) -> &[InputTopology] {
+        self.inputs.as_slice()
+    }
+}
+
+#[derive(Clone, Debug, PartialEq)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+pub struct InputTopology {
+    topology_index: usize,
+    weight: f32,
+}
+
+impl InputTopology {
+    pub fn new_rand(topology_index: usize, rng: &mut impl Rng) -> Self {
+        Self {
+            topology_index,
+            weight: rng.gen_range(-1.0..=1.0),
+        }
+    }
+
+    pub fn topology_index(&self) -> usize {
+        self.topology_index
     }
 }
