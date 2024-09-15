@@ -6,13 +6,16 @@ pub mod replicator;
 
 pub mod topology;
 
+#[cfg(test)]
+mod test_utils;
+
 pub mod prelude {
     pub use super::network::Network;
-    pub use super::neuron::{Neuron, NeuronInput};
+    pub use super::neuron::{Neuron, NeuronInput, NeuronType};
     pub use super::replicator::TopologyReplicator;
     pub use super::topology::{
         activation::Activation,
-        neuron::{NeuronTopology, NeuronTopologyType},
+        neuron::{NeuronInputTopology, NeuronTopology, NeuronTopologyType},
         NetworkTopology,
     };
 }

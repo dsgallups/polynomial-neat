@@ -1,8 +1,7 @@
 use rand::Rng;
 use replicants::{NeuronReplicant, NeuronReplicants};
-use uuid::serde::simple;
 
-use crate::{prelude::*, topology::neuron::InputTopology};
+use crate::prelude::*;
 
 mod replicants;
 
@@ -41,11 +40,8 @@ impl<'a> TopologyReplicator<'a> {
 }
 #[test]
 fn test_simple_replication_properties() {
-    let simple_neuron_topology = vec![
-        NeuronTopology::input(),
-        NeuronTopology::hidden(vec![InputTopology::new(0, 10.)], Activation::Linear, 50.),
-        NeuronTopology::output(vec![InputTopology::new(1, 10.)], Activation::Linear, 50.),
-    ];
+    use crate::test_utils::simple_neuron_topology;
+    let simple_neuron_topology = simple_neuron_topology();
 
     let simple_network = NetworkTopology::from_raw_parts(simple_neuron_topology, 0); //No mutation occurs, except on the mutation rate.
 
@@ -60,21 +56,4 @@ fn test_simple_replication_properties() {
         assert_eq!(n1.activation(), n2.activation());
         assert_eq!(n1.bias(), n2.bias());
     }
-}
-
-#[test]
-fn test_simple_replication_prediction() {
-    let simple_neuron_topology = vec![
-        NeuronTopology::input(),
-        NeuronTopology::hidden(vec![InputTopology::new(0, 10.)], Activation::Linear, 50.),
-        NeuronTopology::output(vec![InputTopology::new(1, 10.)], Activation::Linear, 50.),
-    ];
-
-    let simple_network = NetworkTopology::from_raw_parts(simple_neuron_topology, 0); //No mutation occurs, except on the mutation rate.
-
-    let cloned = simple_network.replicate(&mut rand::thread_rng());
-
-    assert_eq!(simple_network.neurons().len(), cloned.neurons().len());
-
-    let input_value = 45.;
 }
