@@ -7,8 +7,7 @@ mod replicants;
 
 pub struct TopologyReplicator<'a> {
     parent_neurons: &'a [NeuronTopology],
-    parent_mutation_rate: f32,
-    parent_passes: u32,
+    parent_mutation_rate: u8,
 }
 
 impl<'a> TopologyReplicator<'a> {
@@ -16,7 +15,6 @@ impl<'a> TopologyReplicator<'a> {
         Self {
             parent_neurons: topology.neurons(),
             parent_mutation_rate: topology.mutation_rate(),
-            parent_passes: topology.mutation_passes(),
         }
     }
 
@@ -26,7 +24,10 @@ impl<'a> TopologyReplicator<'a> {
         for neuron in self.parent_neurons.iter() {
             NeuronReplicant::from_topology(neuron, &mut replicants, self.parent_neurons);
         }
-        todo!()
+
+        replicants.mutate(self.parent_mutation_rate, rng);
+
+        replicants.into_network_topology()
     }
 }
 #[test]

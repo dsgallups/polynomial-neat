@@ -40,3 +40,11 @@ impl Activation {
         }
     }
 }
+
+pub struct Bias;
+
+impl Bias {
+    pub fn rand(rng: &mut impl Rng) -> f32 {
+        rng.gen()
+    }
+}

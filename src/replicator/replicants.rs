@@ -1,33 +1,174 @@
-use std::sync::{Arc, Weak};
+use std::{
+    hint::unreachable_unchecked,
+    sync::{Arc, RwLock, Weak},
+};
 
+use rand::Rng;
 use uuid::Uuid;
 
-use crate::prelude::*;
+use crate::{prelude::*, topology::activation::Bias};
 
-pub struct NeuronReplicants(Vec<Arc<NeuronReplicant>>);
+pub enum MutationAction {
+    SplitConnection,
+    Add,
+    Remove,
+    MutateConnection,
+    MutateBias,
+    MutateActivationFunction,
+    MutateWeight,
+}
+
+trait MutationRateExt {
+    fn gen_rate(&mut self) -> u8;
+
+    fn gen_mutation_action(&mut self) -> MutationAction;
+}
+
+impl<T: Rng> MutationRateExt for T {
+    fn gen_rate(&mut self) -> u8 {
+        self.gen_range(0..=100)
+    }
+
+    fn gen_mutation_action(&mut self) -> MutationAction {
+        use MutationAction::*;
+        match self.gen_range(0..7) {
+            0 => SplitConnection,
+            1 => Add,
+            2 => Remove,
+            3 => MutateConnection,
+            4 => MutateBias,
+            5 => MutateActivationFunction,
+            6 => MutateWeight,
+            // Safety: Cannot generate a value more than 5
+            _ => unsafe { unreachable_unchecked() },
+        }
+    }
+}
+
+const MAX_MUTATIONS: u8 = 200;
+
+pub struct NeuronReplicants(Vec<Arc<RwLock<NeuronReplicant>>>);
 
 impl NeuronReplicants {
     pub fn with_capacity(cap: usize) -> Self {
         Self(Vec::with_capacity(cap))
     }
 
-    pub fn find_by_id(&self, id: Uuid) -> Option<&Arc<NeuronReplicant>> {
-        self.0.iter().find(|rep| rep.id == id)
+    pub fn find_by_id(&self, id: Uuid) -> Option<&Arc<RwLock<NeuronReplicant>>> {
+        self.0.iter().find(|rep| rep.read().unwrap().id == id)
     }
 
-    pub fn push(&mut self, rep: Arc<NeuronReplicant>) {
+    pub fn random_neuron(&self, rng: &mut impl Rng) -> &Arc<RwLock<NeuronReplicant>> {
+        self.0.get(rng.gen_range(0..self.0.len())).unwrap()
+    }
+
+    pub fn push(&mut self, rep: Arc<RwLock<NeuronReplicant>>) {
         self.0.push(rep);
+    }
+
+    pub fn mutate(&mut self, rate: u8, rng: &mut impl Rng) {
+        use MutationAction::*;
+        let mut mutation_count = 0;
+
+        while rng.gen_rate() <= rate && mutation_count < MAX_MUTATIONS {
+            match rng.gen_mutation_action() {
+                SplitConnection => {
+                    // clone the arc to borrow later
+                    let neuron_to_split = Arc::clone(self.random_neuron(rng));
+                    let removed_input = {
+                        let mut neuron_to_split = neuron_to_split.write().unwrap();
+                        neuron_to_split.remove_random_input(rng)
+                    };
+                    let Some(removed_input) = removed_input else {
+                        continue;
+                    };
+
+                    //make a new neuron
+                    let new_hidden_node = NeuronReplicant::hidden_rand(vec![removed_input], rng);
+
+                    self.push(Arc::clone(&new_hidden_node));
+
+                    //add the new hidden node to the list of inputs for the neuron
+                    let new_replicant_for_neuron =
+                        InputReplicant::new(Arc::downgrade(&new_hidden_node), Bias::rand(rng));
+
+                    let mut neuron_to_split = neuron_to_split.write().unwrap();
+                    neuron_to_split.add_input(new_replicant_for_neuron);
+                    //If the arc is removed from the array at this point, it will disappear, and the weak reference will
+                    //ultimately be removed.
+                }
+                Add => {
+                    // the input neuron gets added to the output neuron's list of inputs
+                    let output_neuron = self.random_neuron(rng);
+                    let input_neuron = self.random_neuron(rng);
+
+                    //the input neuron cannot be an output and the output cannot be an input.
+                    if input_neuron.read().unwrap().is_output()
+                        || output_neuron.read().unwrap().is_input()
+                    {
+                        continue;
+                    }
+
+                    let mut output_neuron = output_neuron.write().unwrap();
+                    let input = InputReplicant::new(Arc::downgrade(input_neuron), Bias::rand(rng));
+                    output_neuron.add_input(input);
+                }
+                Remove => {
+                    // remove a random input node, if it has any.
+                    let remove_from = self.random_neuron(rng);
+                    let mut remove_from = remove_from.write().unwrap();
+                    remove_from.remove_random_input(rng);
+                }
+                MutateWeight => {
+                    let mut neuron = self.random_neuron(rng).write().unwrap();
+                    let Some(random_input) = neuron.get_random_input_mut(rng) else {
+                        continue;
+                    };
+                    random_input.weight += rng.gen_range(-1.0..=1.0);
+                }
+                MutateActivationFunction => {
+                    let mut neuron = self.random_neuron(rng).write().unwrap();
+                    let Some(activation) = neuron.get_activation_mut() else {
+                        continue;
+                    };
+                    *activation = Activation::rand(rng);
+                }
+                MutateBias => {
+                    let mut neuron = self.random_neuron(rng).write().unwrap();
+                    let Some(bias) = neuron.get_bias_mut() else {
+                        continue;
+                    };
+                    *bias += rng.gen_range(-1.0..=1.0);
+                }
+                _ => todo!(),
+            }
+
+            mutation_count += 1;
+        }
+        self.remove_cycles()
+    }
+
+    pub fn remove_cycles(&mut self) {
+        todo!();
+    }
+
+    pub fn into_network_topology(self) -> NetworkTopology {
+        todo!();
     }
 }
 
 pub struct InputReplicant {
-    input: Weak<NeuronReplicant>,
+    input: Weak<RwLock<NeuronReplicant>>,
     weight: f32,
 }
 
 impl InputReplicant {
-    pub fn new(input: Weak<NeuronReplicant>, weight: f32) -> Self {
+    pub fn new(input: Weak<RwLock<NeuronReplicant>>, weight: f32) -> Self {
         Self { input, weight }
+    }
+
+    pub fn neuron_id(&self) -> Option<Uuid> {
+        Weak::upgrade(&self.input).map(|rep| rep.read().unwrap().id())
     }
 }
 pub enum NeuronTypeReplicant {
@@ -62,6 +203,90 @@ impl NeuronTypeReplicant {
             bias,
         }
     }
+
+    pub fn add_input(&mut self, input: InputReplicant) {
+        use NeuronTypeReplicant::*;
+        match self {
+            Input => panic!("Cannot add input to an input node!"),
+            Hidden { ref mut inputs, .. } | Output { ref mut inputs, .. } => {
+                inputs.push(input);
+            }
+        }
+    }
+
+    /// Returnes the removed input, if it has inputs.
+    pub fn remove_random_input(&mut self, rng: &mut impl Rng) -> Option<InputReplicant> {
+        use NeuronTypeReplicant::*;
+        match self {
+            Input => None,
+            Hidden { inputs, .. } | Output { inputs, .. } => {
+                if inputs.is_empty() {
+                    return None;
+                }
+                let removed = inputs.swap_remove(rng.gen_range(0..inputs.len()));
+                Some(removed)
+            }
+        }
+    }
+
+    pub fn get_random_input(&self, rng: &mut impl Rng) -> Option<&InputReplicant> {
+        use NeuronTypeReplicant::*;
+        match self {
+            Input => None,
+            Hidden { inputs, .. } | Output { inputs, .. } => {
+                if inputs.is_empty() {
+                    return None;
+                }
+                inputs.get(rng.gen_range(0..inputs.len()))
+            }
+        }
+    }
+    pub fn get_random_input_mut(&mut self, rng: &mut impl Rng) -> Option<&mut InputReplicant> {
+        use NeuronTypeReplicant::*;
+        match self {
+            Input => None,
+            Hidden { inputs, .. } | Output { inputs, .. } => {
+                if inputs.is_empty() {
+                    return None;
+                }
+                let len = inputs.len();
+                inputs.get_mut(rng.gen_range(0..len))
+            }
+        }
+    }
+    pub fn get_activation_mut(&mut self) -> Option<&mut Activation> {
+        use NeuronTypeReplicant::*;
+        match self {
+            Input => None,
+            Hidden { activation, .. } | Output { activation, .. } => Some(activation),
+        }
+    }
+
+    pub fn get_bias_mut(&mut self) -> Option<&mut f32> {
+        use NeuronTypeReplicant::*;
+        match self {
+            Input => None,
+            Hidden { bias, .. } | Output { bias, .. } => Some(bias),
+        }
+    }
+
+    pub fn num_inputs(&self) -> usize {
+        use NeuronTypeReplicant::*;
+        match self {
+            Input => 0,
+            Hidden { inputs, .. } | Output { inputs, .. } => inputs.len(),
+        }
+    }
+
+    pub fn is_output(&self) -> bool {
+        matches!(self, Self::Output { .. })
+    }
+    pub fn is_input(&self) -> bool {
+        matches!(self, Self::Input)
+    }
+    pub fn is_hidden(&self) -> bool {
+        matches!(self, Self::Hidden { .. })
+    }
 }
 
 pub struct NeuronReplicant {
@@ -70,11 +295,29 @@ pub struct NeuronReplicant {
 }
 
 impl NeuronReplicant {
+    pub fn input(id: Uuid) -> Arc<RwLock<Self>> {
+        Arc::new(RwLock::new(Self {
+            id,
+            neuron_type: NeuronTypeReplicant::input(),
+        }))
+    }
+
+    pub fn new(id: Uuid, neuron_type: NeuronTypeReplicant) -> Arc<RwLock<Self>> {
+        Arc::new(RwLock::new(Self { id, neuron_type }))
+    }
+
+    pub fn hidden_rand(inputs: Vec<InputReplicant>, rng: &mut impl Rng) -> Arc<RwLock<Self>> {
+        let id = Uuid::new_v4();
+        let neuron_type =
+            NeuronTypeReplicant::hidden(inputs, Activation::rand(rng), Bias::rand(rng));
+        Self::new(id, neuron_type)
+    }
+
     pub fn from_topology(
         neuron: &NeuronTopology,
         replicants: &mut NeuronReplicants,
         parent_neurons: &[NeuronTopology],
-    ) -> Arc<Self> {
+    ) -> Arc<RwLock<Self>> {
         let id = neuron.id();
         if let Some(replicant) = replicants.find_by_id(id) {
             return Arc::clone(replicant);
@@ -83,10 +326,7 @@ impl NeuronReplicant {
         //not found
         match neuron.inputs() {
             None => {
-                let val = Arc::new(NeuronReplicant {
-                    id,
-                    neuron_type: NeuronTypeReplicant::Input,
-                });
+                let val = NeuronReplicant::input(id);
                 replicants.push(Arc::clone(&val));
                 val
             }
@@ -119,10 +359,51 @@ impl NeuronReplicant {
                         neuron.bias().unwrap(),
                     )
                 };
-                let val = Arc::new(NeuronReplicant { id, neuron_type });
+                let val = NeuronReplicant::new(id, neuron_type);
                 replicants.push(Arc::clone(&val));
                 val
             }
         }
+    }
+
+    pub fn get_random_input(&self, rng: &mut impl Rng) -> Option<&InputReplicant> {
+        self.neuron_type.get_random_input(rng)
+    }
+    pub fn get_random_input_mut(&mut self, rng: &mut impl Rng) -> Option<&mut InputReplicant> {
+        self.neuron_type.get_random_input_mut(rng)
+    }
+
+    pub fn get_activation_mut(&mut self) -> Option<&mut Activation> {
+        self.neuron_type.get_activation_mut()
+    }
+
+    pub fn get_bias_mut(&mut self) -> Option<&mut f32> {
+        self.neuron_type.get_bias_mut()
+    }
+    pub fn num_inputs(&self) -> usize {
+        self.neuron_type.num_inputs()
+    }
+
+    pub fn id(&self) -> Uuid {
+        self.id
+    }
+
+    /// Returnes the removed input, if it has inputs.
+    pub fn remove_random_input(&mut self, rng: &mut impl Rng) -> Option<InputReplicant> {
+        self.neuron_type.remove_random_input(rng)
+    }
+
+    pub fn add_input(&mut self, input: InputReplicant) {
+        self.neuron_type.add_input(input)
+    }
+
+    pub fn is_output(&self) -> bool {
+        self.neuron_type.is_output()
+    }
+    pub fn is_input(&self) -> bool {
+        self.neuron_type.is_input()
+    }
+    pub fn is_hidden(&self) -> bool {
+        self.neuron_type.is_hidden()
     }
 }

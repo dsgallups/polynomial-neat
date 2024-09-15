@@ -13,16 +13,15 @@ use crate::prelude::TopologyReplicator;
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub struct NetworkTopology {
     neurons: Vec<NeuronTopology>,
-    mutation_rate: f32,
-    mutation_passes: u32,
+    // should be between (0..=100). A higher value equates to a higher rate of mutation.
+    mutation_rate: u8,
 }
 
 impl NetworkTopology {
     pub fn new(
         num_inputs: usize,
         num_outputs: usize,
-        mutation_rate: f32,
-        mutation_passes: u32,
+        mutation_rate: u8,
         rng: &mut impl Rng,
     ) -> Self {
         let neurons = (0..num_inputs)
@@ -46,7 +45,6 @@ impl NetworkTopology {
         Self {
             neurons,
             mutation_rate,
-            mutation_passes,
         }
     }
 
@@ -58,10 +56,7 @@ impl NetworkTopology {
         &self.neurons
     }
 
-    pub fn mutation_rate(&self) -> f32 {
+    pub fn mutation_rate(&self) -> u8 {
         self.mutation_rate
-    }
-    pub fn mutation_passes(&self) -> u32 {
-        self.mutation_passes
     }
 }
