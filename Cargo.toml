@@ -26,5 +26,6 @@ bitflags = "2.6.0"
 genetic-rs = "0.5.3"
 lazy_static = "1.5.0"
 rand = "0.8.5"
+rayon = "1.10.0"
 
 [dev-dependencies]

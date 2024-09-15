@@ -1,8 +1,3 @@
-/// Contains useful structs for serializing/deserializing a [`NeuronTopology`]
-#[cfg_attr(docsrs, doc(cfg(feature = "serde")))]
-#[cfg(feature = "serde")]
-pub mod nnt_serde;
-
 /// Contains structs and traits used for activation functions.
 pub mod activation;
 
@@ -16,12 +11,10 @@ use std::{
 use genetic_rs::prelude::*;
 use rand::prelude::*;
 
-#[cfg(feature = "serde")]
-use serde::{Deserialize, Serialize};
-
 use crate::activation_fn;
 
 /// A stateless neural network topology.
+///
 /// This is the struct you want to use in your agent's inheritance.
 /// See [`NeuralNetwork::from`][crate::NeuralNetwork::from] for how to convert this to a runnable neural network.
 #[derive(Debug)]
@@ -400,133 +393,8 @@ impl<const I: usize, const O: usize> PartialEq for NeuralNetworkTopology<I, O> {
     }
 }
 
-#[cfg(feature = "serde")]
-impl<const I: usize, const O: usize> From<nnt_serde::NNTSerde<I, O>>
-    for NeuralNetworkTopology<I, O>
-{
-    fn from(value: nnt_serde::NNTSerde<I, O>) -> Self {
-        let input_layer = value
-            .input_layer
-            .into_iter()
-            .map(|n| Arc::new(RwLock::new(n)))
-            .collect::<Vec<_>>()
-            .try_into()
-            .unwrap();
-
-        let hidden_layers = value
-            .hidden_layers
-            .into_iter()
-            .map(|n| Arc::new(RwLock::new(n)))
-            .collect();
-
-        let output_layer = value
-            .output_layer
-            .into_iter()
-            .map(|n| Arc::new(RwLock::new(n)))
-            .collect::<Vec<_>>()
-            .try_into()
-            .unwrap();
-
-        NeuralNetworkTopology {
-            input_layer,
-            hidden_layers,
-            output_layer,
-            mutation_rate: value.mutation_rate,
-            mutation_passes: value.mutation_passes,
-        }
-    }
-}
-
-#[cfg(feature = "crossover")]
-impl<const I: usize, const O: usize> CrossoverReproduction for NeuralNetworkTopology<I, O> {
-    fn crossover(&self, other: &Self, rng: &mut impl rand::Rng) -> Self {
-        let input_layer = self
-            .input_layer
-            .iter()
-            .map(|n| Arc::new(RwLock::new(n.read().unwrap().clone())))
-            .collect::<Vec<_>>()
-            .try_into()
-            .unwrap();
-
-        let mut hidden_layers =
-            Vec::with_capacity(self.hidden_layers.len().max(other.hidden_layers.len()));
-
-        for i in 0..hidden_layers.len() {
-            if rng.gen::<f32>() <= 0.5 {
-                if let Some(n) = self.hidden_layers.get(i) {
-                    let mut n = n.read().unwrap().clone();
-
-                    n.inputs
-                        .retain(|(l, _)| input_exists(*l, &input_layer, &hidden_layers));
-                    hidden_layers[i] = Arc::new(RwLock::new(n));
-
-                    continue;
-                }
-            }
-
-            let mut n = other.hidden_layers[i].read().unwrap().clone();
-
-            n.inputs
-                .retain(|(l, _)| input_exists(*l, &input_layer, &hidden_layers));
-            hidden_layers[i] = Arc::new(RwLock::new(n));
-        }
-
-        let mut output_layer: [Arc<RwLock<NeuronTopology>>; O] = self
-            .output_layer
-            .iter()
-            .map(|n| Arc::new(RwLock::new(n.read().unwrap().clone())))
-            .collect::<Vec<_>>()
-            .try_into()
-            .unwrap();
-
-        for (i, n) in self.output_layer.iter().enumerate() {
-            if rng.gen::<f32>() <= 0.5 {
-                let mut n = n.read().unwrap().clone();
-
-                n.inputs
-                    .retain(|(l, _)| input_exists(*l, &input_layer, &hidden_layers));
-                output_layer[i] = Arc::new(RwLock::new(n));
-
-                continue;
-            }
-
-            let mut n = other.output_layer[i].read().unwrap().clone();
-
-            n.inputs
-                .retain(|(l, _)| input_exists(*l, &input_layer, &hidden_layers));
-            output_layer[i] = Arc::new(RwLock::new(n));
-        }
-
-        let mut child = Self {
-            input_layer,
-            hidden_layers,
-            output_layer,
-            mutation_rate: self.mutation_rate,
-            mutation_passes: self.mutation_passes,
-        };
-
-        child.mutate(self.mutation_rate, rng);
-
-        child
-    }
-}
-
-#[cfg(feature = "crossover")]
-fn input_exists<const I: usize>(
-    loc: NeuronLocation,
-    input: &[Arc<RwLock<NeuronTopology>>; I],
-    hidden: &[Arc<RwLock<NeuronTopology>>],
-) -> bool {
-    match loc {
-        NeuronLocation::Input(i) => i < input.len(),
-        NeuronLocation::Hidden(i) => i < hidden.len(),
-        NeuronLocation::Output(_) => false,
-    }
-}
-
 /// A stateless version of [`Neuron`][crate::Neuron].
 #[derive(PartialEq, Debug, Clone)]
-#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub struct NeuronTopology {
     /// The input locations and weights.
     pub inputs: Vec<(NeuronLocation, f32)>,
@@ -587,7 +455,6 @@ impl NeuronTopology {
 
 /// A pseudo-pointer of sorts used to make structural conversions very fast and easy to write.
 #[derive(Hash, Clone, Copy, Debug, Eq, PartialEq)]
-#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub enum NeuronLocation {
     /// Points to a neuron in the input layer at contained index.
     Input(usize),

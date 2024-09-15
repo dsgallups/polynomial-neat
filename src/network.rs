@@ -1,0 +1,61 @@
+use std::sync::{Arc, RwLock};
+
+use rayon::iter::{
+    IndexedParallelIterator as _, IntoParallelRefIterator as _, ParallelIterator as _,
+};
+
+use crate::prelude::*;
+
+pub struct Network {
+    // contains all neurons
+    neurons: Vec<Arc<RwLock<Neuron>>>,
+    // contains the input neurons. cloned arc of neurons in neurons
+    input_layer: Vec<Arc<RwLock<Neuron>>>,
+    // contains the output neurons. cloned arc of neurons in neurons
+    output_layer: Vec<Arc<RwLock<Neuron>>>,
+}
+
+impl Network {
+    /// Flushes the previous state of the network and calculates given new inputs.
+    pub fn predict(&self, inputs: &[f32]) -> impl IntoIterator<Item = f32> {
+        // reset all states first
+        self.neurons.par_iter().for_each(|neuron| {
+            let mut neuron = neuron.write().unwrap();
+            neuron.flush_state();
+        });
+        inputs.par_iter().enumerate().for_each(|(index, value)| {
+            let Some(nw) = self.input_layer.get(index) else {
+                return;
+            };
+            let mut nw = nw.write().unwrap();
+            nw.override_state(*value);
+        });
+
+        // override the state of the input layer
+        for (i, value) in inputs.iter().enumerate() {
+            let Some(nw) = self.input_layer.get(i) else {
+                break; // mismatch in input count and output count, which is fine.
+            };
+            // we forcefully hold the lock here since these need to be loaded first.
+            let mut neuron = nw.write().unwrap();
+            neuron.override_state(*value);
+        }
+
+        let outputs = self
+            .output_layer
+            .par_iter()
+            .fold(Vec::new, |mut values, neuron| {
+                let mut neuron = neuron.write().unwrap();
+
+                values.push(neuron.activate());
+
+                values
+            })
+            .collect_vec_list();
+
+        outputs
+            .into_iter()
+            .flat_map(|outer_vec| outer_vec.into_iter())
+            .flat_map(|inner_vec| inner_vec.into_iter())
+    }
+}

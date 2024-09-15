@@ -176,33 +176,6 @@ impl PartialEq for ActivationFn {
     }
 }
 
-#[cfg(feature = "serde")]
-impl Serialize for ActivationFn {
-    fn serialize<S: Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
-        serializer.serialize_str(&self.name)
-    }
-}
-
-#[cfg(feature = "serde")]
-impl<'a> Deserialize<'a> for ActivationFn {
-    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
-    where
-        D: Deserializer<'a>,
-    {
-        let name = String::deserialize(deserializer)?;
-
-        let reg = ACTIVATION_REGISTRY.read().unwrap();
-
-        let f = reg.fns.get(&name);
-
-        if f.is_none() {
-            panic!("Activation function {name} not found");
-        }
-
-        Ok(f.unwrap().clone())
-    }
-}
-
 /// The sigmoid activation function.
 pub fn sigmoid(n: f32) -> f32 {
     1. / (1. + std::f32::consts::E.powf(-n))
