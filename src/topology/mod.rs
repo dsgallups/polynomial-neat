@@ -1,3 +1,5 @@
+use std::sync::{Arc, RwLock};
+
 use neuron::{InputTopology, NeuronTopology};
 use rand::Rng;
 
@@ -7,7 +9,7 @@ pub mod neuron;
 #[cfg(feature = "serde")]
 use serde::{Deserialize, Serialize};
 
-use crate::prelude::TopologyReplicator;
+use crate::{network::Network, neuron::Neuron, prelude::TopologyReplicator};
 
 #[derive(Clone, Debug, PartialEq)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
@@ -65,5 +67,30 @@ impl NetworkTopology {
 
     pub fn mutation_rate(&self) -> u8 {
         self.mutation_rate
+    }
+
+    pub fn to_network(&self) -> Network {
+        Network::from(self)
+    }
+}
+
+impl From<&NetworkTopology> for Network {
+    fn from(value: &NetworkTopology) -> Self {
+        let mut neurons: Vec<Arc<RwLock<Neuron>>> = Vec::with_capacity(value.neurons().len());
+        let mut input_layer: Vec<Arc<RwLock<Neuron>>> = Vec::new();
+        let mut output_layer: Vec<Arc<RwLock<Neuron>>> = Vec::new();
+
+        for neuron_topology in value.neurons() {
+            let neuron = neuron_topology.to_neuron(&mut neurons, value.neurons());
+            let neuron_read = neuron.read().unwrap();
+            if neuron_read.is_input() {
+                input_layer.push(Arc::clone(&neuron));
+            }
+            if neuron_read.is_output() {
+                output_layer.push(Arc::clone(&neuron));
+            }
+        }
+
+        Network::from_raw_parts(neurons, input_layer, output_layer)
     }
 }

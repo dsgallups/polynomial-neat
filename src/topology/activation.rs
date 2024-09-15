@@ -30,7 +30,7 @@ impl Activation {
         }
     }
 
-    pub fn as_fn(&self) -> Box<dyn Fn(f32) -> f32> {
+    pub fn as_fn(&self) -> Box<dyn Fn(f32) -> f32 + Send + Sync> {
         use Activation::*;
         match self {
             Sigmoid => Box::new(|n: f32| 1. / (1. + std::f32::consts::E.powf(-n))),

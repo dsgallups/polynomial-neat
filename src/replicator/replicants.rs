@@ -408,13 +408,21 @@ impl NeuronReplicant {
                 }
             }
             if self.is_hidden() {
-                NeuronType::hidden(new_inputs, self.activation().unwrap(), self.bias().unwrap())
+                NeuronTopologyType::hidden(
+                    new_inputs,
+                    self.activation().unwrap(),
+                    self.bias().unwrap(),
+                )
             } else {
                 //is output
-                NeuronType::output(new_inputs, self.activation().unwrap(), self.bias().unwrap())
+                NeuronTopologyType::output(
+                    new_inputs,
+                    self.activation().unwrap(),
+                    self.bias().unwrap(),
+                )
             }
         } else {
-            NeuronType::Input
+            NeuronTopologyType::Input
         };
 
         neuron_topology.push(NeuronTopology::new(self.id(), neuron_type));

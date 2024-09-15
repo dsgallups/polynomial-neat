@@ -12,7 +12,7 @@ pub mod prelude {
     pub use super::replicator::TopologyReplicator;
     pub use super::topology::{
         activation::Activation,
-        neuron::{NeuronTopology, NeuronType},
+        neuron::{NeuronTopology, NeuronTopologyType},
         NetworkTopology,
     };
 }
