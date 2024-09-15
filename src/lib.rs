@@ -1,12 +1,18 @@
-pub mod feed_forward;
-pub mod genome;
-pub mod prelude;
-pub mod runnable;
-pub mod simple;
+pub mod neuron;
+
+pub mod network;
+
+pub mod replicator;
+
 pub mod topology;
 
-pub use genetic_rs::prelude::*;
-pub use runnable::*;
-pub use topology::*;
-
-pub use nnt_serde::*;
+pub mod prelude {
+    pub use super::network::Network;
+    pub use super::neuron::{Neuron, NeuronInput};
+    pub use super::replicator::TopologyReplicator;
+    pub use super::topology::{
+        activation::Activation,
+        neuron::{NeuronTopology, NeuronType},
+        NetworkTopology,
+    };
+}
