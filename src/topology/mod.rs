@@ -48,6 +48,13 @@ impl NetworkTopology {
         }
     }
 
+    pub fn from_raw_parts(neurons: Vec<NeuronTopology>, mutation_rate: u8) -> Self {
+        Self {
+            neurons,
+            mutation_rate,
+        }
+    }
+
     pub fn replicate(&self, rng: &mut impl Rng) -> Self {
         TopologyReplicator::new(self).replicate(rng)
     }

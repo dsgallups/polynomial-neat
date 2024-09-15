@@ -23,6 +23,21 @@ pub enum NeuronType {
 }
 
 impl NeuronType {
+    pub fn hidden(inputs: Vec<InputTopology>, activation: Activation, bias: f32) -> Self {
+        Self::Hidden {
+            inputs,
+            activation,
+            bias,
+        }
+    }
+    pub fn output(inputs: Vec<InputTopology>, activation: Activation, bias: f32) -> Self {
+        Self::Output {
+            inputs,
+            activation,
+            bias,
+        }
+    }
+
     pub fn inputs(&self) -> Option<&[InputTopology]> {
         use NeuronType::*;
         match &self {
@@ -62,6 +77,9 @@ pub struct NeuronTopology {
 }
 
 impl NeuronTopology {
+    pub fn new(id: Uuid, neuron_type: NeuronType) -> Self {
+        Self { id, neuron_type }
+    }
     pub fn input() -> Self {
         Self {
             id: Uuid::new_v4(),
@@ -183,6 +201,13 @@ pub struct InputTopology {
 }
 
 impl InputTopology {
+    pub fn new(topology_index: usize, weight: f32) -> Self {
+        Self {
+            topology_index,
+            weight,
+        }
+    }
+
     pub fn new_rand(topology_index: usize, rng: &mut impl Rng) -> Self {
         Self {
             topology_index,

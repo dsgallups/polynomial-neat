@@ -27,7 +27,15 @@ impl<'a> TopologyReplicator<'a> {
 
         replicants.mutate(self.parent_mutation_rate, rng);
 
-        replicants.into_network_topology()
+        let neuron_topology = replicants.into_neuron_topology();
+
+        let new_mutation_rate = if rng.gen_bool(0.5) {
+            self.parent_mutation_rate.saturating_add(1)
+        } else {
+            self.parent_mutation_rate.saturating_sub(1)
+        };
+
+        NetworkTopology::from_raw_parts(neuron_topology, new_mutation_rate)
     }
 }
 #[test]

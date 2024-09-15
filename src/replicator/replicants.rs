@@ -7,7 +7,10 @@ use std::{
 use rand::Rng;
 use uuid::Uuid;
 
-use crate::{prelude::*, topology::activation::Bias};
+use crate::{
+    prelude::*,
+    topology::{activation::Bias, neuron::InputTopology},
+};
 
 pub enum MutationAction {
     SplitConnection,
@@ -129,14 +132,14 @@ impl NeuronReplicants {
                 }
                 MutateActivationFunction => {
                     let mut neuron = self.random_neuron(rng).write().unwrap();
-                    let Some(activation) = neuron.get_activation_mut() else {
+                    let Some(activation) = neuron.activation_mut() else {
                         continue;
                     };
                     *activation = Activation::rand(rng);
                 }
                 MutateBias => {
                     let mut neuron = self.random_neuron(rng).write().unwrap();
-                    let Some(bias) = neuron.get_bias_mut() else {
+                    let Some(bias) = neuron.bias_mut() else {
                         continue;
                     };
                     *bias += rng.gen_range(-1.0..=1.0);
@@ -188,9 +191,16 @@ impl NeuronReplicants {
         }
     }
 
-    pub fn into_network_topology(mut self) -> NetworkTopology {
+    pub fn into_neuron_topology(mut self) -> Vec<NeuronTopology> {
         self.remove_cycles();
-        todo!();
+
+        let mut neuron_topology = Vec::new();
+
+        for replicant in self.0.iter() {
+            let replicant = replicant.read().unwrap();
+            replicant.to_topology(&mut neuron_topology);
+        }
+        neuron_topology
     }
 }
 
@@ -204,12 +214,11 @@ impl InputReplicant {
         Self { input, weight }
     }
 
-    pub fn neuron_id(&self) -> Option<Uuid> {
-        Weak::upgrade(&self.input).map(|rep| rep.read().unwrap().id())
-    }
-
     pub fn neuron(&self) -> Option<Arc<RwLock<NeuronReplicant>>> {
         Weak::upgrade(&self.input)
+    }
+    pub fn weight(&self) -> f32 {
+        self.weight
     }
 }
 pub enum NeuronTypeReplicant {
@@ -262,14 +271,6 @@ impl NeuronTypeReplicant {
         }
     }
 
-    pub fn inputs_mut(&mut self) -> Option<&mut Vec<InputReplicant>> {
-        use NeuronTypeReplicant::*;
-        match self {
-            Input => None,
-            Hidden { ref mut inputs, .. } | Output { ref mut inputs, .. } => Some(inputs),
-        }
-    }
-
     // Clears out all inputs whose reference is dropped or match on the provided ids
     pub fn trim_inputs(&mut self, ids: Vec<Uuid>) {
         use NeuronTypeReplicant::*;
@@ -303,18 +304,6 @@ impl NeuronTypeReplicant {
         }
     }
 
-    pub fn get_random_input(&self, rng: &mut impl Rng) -> Option<&InputReplicant> {
-        use NeuronTypeReplicant::*;
-        match self {
-            Input => None,
-            Hidden { inputs, .. } | Output { inputs, .. } => {
-                if inputs.is_empty() {
-                    return None;
-                }
-                inputs.get(rng.gen_range(0..inputs.len()))
-            }
-        }
-    }
     pub fn get_random_input_mut(&mut self, rng: &mut impl Rng) -> Option<&mut InputReplicant> {
         use NeuronTypeReplicant::*;
         match self {
@@ -328,15 +317,28 @@ impl NeuronTypeReplicant {
             }
         }
     }
-    pub fn get_activation_mut(&mut self) -> Option<&mut Activation> {
+    pub fn activation(&self) -> Option<Activation> {
+        use NeuronTypeReplicant::*;
+        match self {
+            Input => None,
+            Hidden { activation, .. } | Output { activation, .. } => Some(*activation),
+        }
+    }
+    pub fn activation_mut(&mut self) -> Option<&mut Activation> {
         use NeuronTypeReplicant::*;
         match self {
             Input => None,
             Hidden { activation, .. } | Output { activation, .. } => Some(activation),
         }
     }
-
-    pub fn get_bias_mut(&mut self) -> Option<&mut f32> {
+    pub fn bias(&self) -> Option<f32> {
+        use NeuronTypeReplicant::*;
+        match self {
+            Input => None,
+            Hidden { bias, .. } | Output { bias, .. } => Some(*bias),
+        }
+    }
+    pub fn bias_mut(&mut self) -> Option<&mut f32> {
         use NeuronTypeReplicant::*;
         match self {
             Input => None,
@@ -385,6 +387,38 @@ impl NeuronReplicant {
         let neuron_type =
             NeuronTypeReplicant::hidden(inputs, Activation::rand(rng), Bias::rand(rng));
         Self::new(id, neuron_type)
+    }
+
+    /// returns the index of the neuron in the vector
+    pub fn to_topology(&self, neuron_topology: &mut Vec<NeuronTopology>) -> usize {
+        if let Some(index) = neuron_topology
+            .iter()
+            .position(|neuron| neuron.id() == self.id())
+        {
+            return index;
+        }
+
+        let neuron_type = if let Some(inputs) = self.inputs() {
+            let mut new_inputs: Vec<InputTopology> = Vec::with_capacity(self.num_inputs());
+            for input in inputs {
+                if let Some(input_node) = input.neuron() {
+                    let index = input_node.read().unwrap().to_topology(neuron_topology);
+                    let input_topology = InputTopology::new(index, input.weight());
+                    new_inputs.push(input_topology);
+                }
+            }
+            if self.is_hidden() {
+                NeuronType::hidden(new_inputs, self.activation().unwrap(), self.bias().unwrap())
+            } else {
+                //is output
+                NeuronType::output(new_inputs, self.activation().unwrap(), self.bias().unwrap())
+            }
+        } else {
+            NeuronType::Input
+        };
+
+        neuron_topology.push(NeuronTopology::new(self.id(), neuron_type));
+        neuron_topology.len()
     }
 
     pub fn from_topology(
@@ -440,19 +474,22 @@ impl NeuronReplicant {
         }
     }
 
-    pub fn get_random_input(&self, rng: &mut impl Rng) -> Option<&InputReplicant> {
-        self.neuron_type.get_random_input(rng)
-    }
     pub fn get_random_input_mut(&mut self, rng: &mut impl Rng) -> Option<&mut InputReplicant> {
         self.neuron_type.get_random_input_mut(rng)
     }
 
-    pub fn get_activation_mut(&mut self) -> Option<&mut Activation> {
-        self.neuron_type.get_activation_mut()
+    pub fn activation(&self) -> Option<Activation> {
+        self.neuron_type.activation()
     }
 
-    pub fn get_bias_mut(&mut self) -> Option<&mut f32> {
-        self.neuron_type.get_bias_mut()
+    pub fn activation_mut(&mut self) -> Option<&mut Activation> {
+        self.neuron_type.activation_mut()
+    }
+    pub fn bias(&self) -> Option<f32> {
+        self.neuron_type.bias()
+    }
+    pub fn bias_mut(&mut self) -> Option<&mut f32> {
+        self.neuron_type.bias_mut()
     }
     pub fn num_inputs(&self) -> usize {
         self.neuron_type.num_inputs()
@@ -473,10 +510,6 @@ impl NeuronReplicant {
 
     pub fn inputs(&self) -> Option<&[InputReplicant]> {
         self.neuron_type.inputs()
-    }
-
-    pub fn inputs_mut(&mut self) -> Option<&mut Vec<InputReplicant>> {
-        self.neuron_type.inputs_mut()
     }
 
     pub fn is_output(&self) -> bool {
