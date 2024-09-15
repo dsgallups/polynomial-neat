@@ -58,4 +58,16 @@ impl Network {
             .flat_map(|outer_vec| outer_vec.into_iter())
             .flat_map(|inner_vec| inner_vec.into_iter())
     }
+
+    pub fn from_raw_parts(
+        neurons: Vec<Arc<RwLock<Neuron>>>,
+        input_layer: Vec<Arc<RwLock<Neuron>>>,
+        output_layer: Vec<Arc<RwLock<Neuron>>>,
+    ) -> Self {
+        Self {
+            neurons,
+            input_layer,
+            output_layer,
+        }
+    }
 }

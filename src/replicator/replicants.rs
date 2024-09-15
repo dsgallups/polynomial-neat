@@ -9,7 +9,7 @@ use uuid::Uuid;
 
 use crate::{
     prelude::*,
-    topology::{activation::Bias, neuron::InputTopology},
+    topology::{activation::Bias, neuron::NeuronInputTopology},
 };
 
 pub enum MutationAction {
@@ -399,22 +399,30 @@ impl NeuronReplicant {
         }
 
         let neuron_type = if let Some(inputs) = self.inputs() {
-            let mut new_inputs: Vec<InputTopology> = Vec::with_capacity(self.num_inputs());
+            let mut new_inputs: Vec<NeuronInputTopology> = Vec::with_capacity(self.num_inputs());
             for input in inputs {
                 if let Some(input_node) = input.neuron() {
                     let index = input_node.read().unwrap().to_topology(neuron_topology);
-                    let input_topology = InputTopology::new(index, input.weight());
+                    let input_topology = NeuronInputTopology::new(index, input.weight());
                     new_inputs.push(input_topology);
                 }
             }
             if self.is_hidden() {
-                NeuronType::hidden(new_inputs, self.activation().unwrap(), self.bias().unwrap())
+                NeuronTopologyType::hidden(
+                    new_inputs,
+                    self.activation().unwrap(),
+                    self.bias().unwrap(),
+                )
             } else {
                 //is output
-                NeuronType::output(new_inputs, self.activation().unwrap(), self.bias().unwrap())
+                NeuronTopologyType::output(
+                    new_inputs,
+                    self.activation().unwrap(),
+                    self.bias().unwrap(),
+                )
             }
         } else {
-            NeuronType::Input
+            NeuronTopologyType::Input
         };
 
         neuron_topology.push(NeuronTopology::new(self.id(), neuron_type));

@@ -1,4 +1,6 @@
-use neuron::{InputTopology, NeuronTopology};
+use std::sync::{Arc, RwLock};
+
+use neuron::{NeuronInputTopology, NeuronTopology};
 use rand::Rng;
 
 pub mod activation;
@@ -7,7 +9,7 @@ pub mod neuron;
 #[cfg(feature = "serde")]
 use serde::{Deserialize, Serialize};
 
-use crate::prelude::TopologyReplicator;
+use crate::prelude::*;
 
 #[derive(Clone, Debug, PartialEq)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
@@ -31,7 +33,7 @@ impl NetworkTopology {
                 let mut chosen_inputs = (0..rng.gen_range(1..num_inputs))
                     .map(|_| {
                         let topology_index = rng.gen_range(0..num_inputs);
-                        InputTopology::new_rand(topology_index, rng)
+                        NeuronInputTopology::new_rand(topology_index, rng)
                     })
                     .collect::<Vec<_>>();
 
@@ -65,5 +67,51 @@ impl NetworkTopology {
 
     pub fn mutation_rate(&self) -> u8 {
         self.mutation_rate
+    }
+
+    pub fn to_network(&self) -> Network {
+        Network::from(self)
+    }
+}
+
+impl From<&NetworkTopology> for Network {
+    fn from(value: &NetworkTopology) -> Self {
+        let mut neurons: Vec<Arc<RwLock<Neuron>>> = Vec::with_capacity(value.neurons().len());
+        let mut input_layer: Vec<Arc<RwLock<Neuron>>> = Vec::new();
+        let mut output_layer: Vec<Arc<RwLock<Neuron>>> = Vec::new();
+
+        for neuron_topology in value.neurons() {
+            let neuron = neuron_topology.to_neuron(&mut neurons, value.neurons());
+            let neuron_read = neuron.read().unwrap();
+            if neuron_read.is_input() {
+                input_layer.push(Arc::clone(&neuron));
+            }
+            if neuron_read.is_output() {
+                output_layer.push(Arc::clone(&neuron));
+            }
+        }
+
+        Network::from_raw_parts(neurons, input_layer, output_layer)
+    }
+}
+#[test]
+fn test_simple_replication_prediction() {
+    use crate::test_utils::simple_neuron_topology;
+    let simple_neuron_topology = simple_neuron_topology();
+
+    let simple_network = NetworkTopology::from_raw_parts(simple_neuron_topology, 0); //No mutation occurs, except on the mutation rate.
+
+    let cloned_network = simple_network.replicate(&mut rand::thread_rng());
+
+    let simple_network = simple_network.to_network();
+    let cloned_network = cloned_network.to_network();
+
+    let input_value = &[45.];
+
+    let simple_result = simple_network.predict(input_value);
+    let cloned_result = cloned_network.predict(input_value);
+
+    for (simple_result, cloned_result) in simple_result.into_iter().zip(cloned_result) {
+        assert_eq!(simple_result, cloned_result)
     }
 }

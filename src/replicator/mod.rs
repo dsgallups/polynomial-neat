@@ -39,6 +39,21 @@ impl<'a> TopologyReplicator<'a> {
     }
 }
 #[test]
-fn test_simple_replication() {
-    todo!();
+fn test_simple_replication_properties() {
+    use crate::test_utils::simple_neuron_topology;
+    let simple_neuron_topology = simple_neuron_topology();
+
+    let simple_network = NetworkTopology::from_raw_parts(simple_neuron_topology, 0); //No mutation occurs, except on the mutation rate.
+
+    let cloned = simple_network.replicate(&mut rand::thread_rng());
+
+    assert_eq!(simple_network.neurons().len(), cloned.neurons().len());
+
+    for (n1, n2) in simple_network.neurons().iter().zip(cloned.neurons()) {
+        assert_eq!(n1.is_hidden(), n2.is_hidden());
+        assert_eq!(n1.is_input(), n2.is_input());
+        assert_eq!(n1.is_output(), n2.is_output());
+        assert_eq!(n1.activation(), n2.activation());
+        assert_eq!(n1.bias(), n2.bias());
+    }
 }

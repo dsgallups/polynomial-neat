@@ -1,36 +1,40 @@
+use std::sync::{Arc, RwLock};
+
 use rand::Rng;
 #[cfg(feature = "serde")]
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
+
+use crate::neuron::{Neuron, NeuronInput, NeuronType};
 
 use super::activation::Activation;
 
 /// Needs distinction between Hidden and Output since it's a DAG
 #[derive(Clone, Debug, PartialEq)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
-pub enum NeuronType {
+pub enum NeuronTopologyType {
     Input,
     Hidden {
-        inputs: Vec<InputTopology>,
+        inputs: Vec<NeuronInputTopology>,
         activation: Activation,
         bias: f32,
     },
     Output {
-        inputs: Vec<InputTopology>,
+        inputs: Vec<NeuronInputTopology>,
         activation: Activation,
         bias: f32,
     },
 }
 
-impl NeuronType {
-    pub fn hidden(inputs: Vec<InputTopology>, activation: Activation, bias: f32) -> Self {
+impl NeuronTopologyType {
+    pub fn hidden(inputs: Vec<NeuronInputTopology>, activation: Activation, bias: f32) -> Self {
         Self::Hidden {
             inputs,
             activation,
             bias,
         }
     }
-    pub fn output(inputs: Vec<InputTopology>, activation: Activation, bias: f32) -> Self {
+    pub fn output(inputs: Vec<NeuronInputTopology>, activation: Activation, bias: f32) -> Self {
         Self::Output {
             inputs,
             activation,
@@ -38,8 +42,8 @@ impl NeuronType {
         }
     }
 
-    pub fn inputs(&self) -> Option<&[InputTopology]> {
-        use NeuronType::*;
+    pub fn inputs(&self) -> Option<&[NeuronInputTopology]> {
+        use NeuronTopologyType::*;
         match &self {
             Input => None,
             Hidden {
@@ -55,14 +59,14 @@ impl NeuronType {
         }
     }
     pub fn activation(&self) -> Option<Activation> {
-        use NeuronType::*;
+        use NeuronTopologyType::*;
         match &self {
             Input => None,
             Hidden { activation, .. } | Output { activation, .. } => Some(*activation),
         }
     }
     pub fn bias(&self) -> Option<f32> {
-        use NeuronType::*;
+        use NeuronTopologyType::*;
         match &self {
             Input => None,
             Hidden { bias, .. } | Output { bias, .. } => Some(*bias),
@@ -73,25 +77,83 @@ impl NeuronType {
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub struct NeuronTopology {
     id: Uuid,
-    neuron_type: NeuronType,
+    neuron_type: NeuronTopologyType,
 }
 
 impl NeuronTopology {
-    pub fn new(id: Uuid, neuron_type: NeuronType) -> Self {
+    pub fn new(id: Uuid, neuron_type: NeuronTopologyType) -> Self {
         Self { id, neuron_type }
     }
+
+    pub fn to_neuron(
+        &self,
+        neurons: &mut Vec<Arc<RwLock<Neuron>>>,
+        topology: &[NeuronTopology],
+    ) -> Arc<RwLock<Neuron>> {
+        if let Some(neuron) = neurons
+            .iter()
+            .find(|neuron| neuron.read().unwrap().id() == self.id())
+        {
+            return Arc::clone(neuron);
+        }
+
+        let neuron_type: NeuronType = if let Some(inputs) = self.inputs() {
+            let mut new_inputs = Vec::with_capacity(inputs.len());
+            for input in inputs {
+                let input_neuron = topology.get(input.topology_index()).unwrap();
+                let converted = input_neuron.to_neuron(neurons, topology);
+                new_inputs.push(NeuronInput::new(converted, input.weight()));
+            }
+
+            if self.is_hidden() {
+                NeuronType::hidden(
+                    new_inputs,
+                    self.activation().unwrap().as_fn(),
+                    self.bias().unwrap(),
+                )
+            } else {
+                NeuronType::output(
+                    new_inputs,
+                    self.activation().unwrap().as_fn(),
+                    self.bias().unwrap(),
+                )
+            }
+        } else {
+            NeuronType::input()
+        };
+
+        let new_neuron = Neuron::new(self.id(), neuron_type);
+
+        let neuron = Arc::new(RwLock::new(new_neuron));
+
+        neurons.push(Arc::clone(&neuron));
+
+        neuron
+    }
+
     pub fn input() -> Self {
         Self {
             id: Uuid::new_v4(),
-            neuron_type: NeuronType::Input,
+            neuron_type: NeuronTopologyType::Input,
         }
     }
 
-    pub fn output_rand(inputs: Vec<InputTopology>, rng: &mut impl Rng) -> Self {
+    pub fn output(inputs: Vec<NeuronInputTopology>, activation: Activation, bias: f32) -> Self {
+        Self {
+            id: Uuid::new_v4(),
+            neuron_type: NeuronTopologyType::Output {
+                inputs,
+                activation,
+                bias,
+            },
+        }
+    }
+
+    pub fn output_rand(inputs: Vec<NeuronInputTopology>, rng: &mut impl Rng) -> Self {
         Self {
             id: Uuid::new_v4(),
 
-            neuron_type: NeuronType::Output {
+            neuron_type: NeuronTopologyType::Output {
                 inputs,
                 activation: Activation::rand(rng),
                 bias: rng.gen(),
@@ -99,10 +161,21 @@ impl NeuronTopology {
         }
     }
 
-    pub fn hidden_rand(inputs: Vec<InputTopology>, rng: &mut impl Rng) -> Self {
+    pub fn hidden(inputs: Vec<NeuronInputTopology>, activation: Activation, bias: f32) -> Self {
         Self {
             id: Uuid::new_v4(),
-            neuron_type: NeuronType::Hidden {
+            neuron_type: NeuronTopologyType::Hidden {
+                inputs,
+                activation,
+                bias,
+            },
+        }
+    }
+
+    pub fn hidden_rand(inputs: Vec<NeuronInputTopology>, rng: &mut impl Rng) -> Self {
+        Self {
+            id: Uuid::new_v4(),
+            neuron_type: NeuronTopologyType::Hidden {
                 inputs,
                 activation: Activation::rand(rng),
                 bias: rng.gen(),
@@ -110,23 +183,23 @@ impl NeuronTopology {
         }
     }
 
-    pub fn inputs(&self) -> Option<&[InputTopology]> {
+    pub fn inputs(&self) -> Option<&[NeuronInputTopology]> {
         self.neuron_type.inputs()
     }
-    pub fn neuron_type(&self) -> &NeuronType {
+    pub fn neuron_type(&self) -> &NeuronTopologyType {
         &self.neuron_type
     }
 
     pub fn is_input(&self) -> bool {
-        matches!(self.neuron_type, NeuronType::Input)
+        matches!(self.neuron_type, NeuronTopologyType::Input)
     }
 
     pub fn is_hidden(&self) -> bool {
-        matches!(self.neuron_type, NeuronType::Hidden { .. })
+        matches!(self.neuron_type, NeuronTopologyType::Hidden { .. })
     }
 
     pub fn is_output(&self) -> bool {
-        matches!(self.neuron_type, NeuronType::Output { .. })
+        matches!(self.neuron_type, NeuronTopologyType::Output { .. })
     }
 
     pub fn id(&self) -> Uuid {
@@ -144,7 +217,7 @@ impl NeuronTopology {
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub struct OldNeuronTopology {
     // .0 is the index of the node into the topology. .1 is the weight.
-    inputs: Vec<InputTopology>,
+    inputs: Vec<NeuronInputTopology>,
     activation: Activation,
     bias: f32,
 }
@@ -158,7 +231,7 @@ impl OldNeuronTopology {
         }
     }
 
-    pub fn new_hidden_rand(inputs: Vec<InputTopology>, rng: &mut impl Rng) -> Self {
+    pub fn new_hidden_rand(inputs: Vec<NeuronInputTopology>, rng: &mut impl Rng) -> Self {
         Self {
             inputs,
             activation: Activation::rand(rng),
@@ -167,7 +240,7 @@ impl OldNeuronTopology {
     }
 
     pub fn new_with_activation_rand(
-        inputs: Vec<InputTopology>,
+        inputs: Vec<NeuronInputTopology>,
         activation: Activation,
         rng: &mut impl Rng,
     ) -> Self {
@@ -188,19 +261,19 @@ impl OldNeuronTopology {
     pub fn activation(&self) -> Activation {
         self.activation
     }
-    pub fn inputs(&self) -> &[InputTopology] {
+    pub fn inputs(&self) -> &[NeuronInputTopology] {
         self.inputs.as_slice()
     }
 }
 
 #[derive(Clone, Debug, PartialEq)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
-pub struct InputTopology {
+pub struct NeuronInputTopology {
     topology_index: usize,
     weight: f32,
 }
 
-impl InputTopology {
+impl NeuronInputTopology {
     pub fn new(topology_index: usize, weight: f32) -> Self {
         Self {
             topology_index,
