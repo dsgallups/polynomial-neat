@@ -49,6 +49,7 @@ impl<T: Rng> MutationRateExt for T {
 
 const MAX_MUTATIONS: u8 = 200;
 
+#[derive(Clone)]
 pub struct NeuronReplicants(Vec<Arc<RwLock<NeuronReplicant>>>);
 
 impl NeuronReplicants {
@@ -221,6 +222,7 @@ impl NeuronReplicants {
     }
 }
 
+#[derive(Clone)]
 pub struct InputReplicant {
     input: Weak<RwLock<NeuronReplicant>>,
     weight: f32,
@@ -238,6 +240,8 @@ impl InputReplicant {
         self.weight
     }
 }
+
+#[derive(Clone)]
 pub enum NeuronTypeReplicant {
     Input,
     Hidden {
@@ -382,6 +386,7 @@ impl NeuronTypeReplicant {
     }
 }
 
+#[derive(Clone)]
 pub struct NeuronReplicant {
     id: Uuid,
     neuron_type: NeuronTypeReplicant,
