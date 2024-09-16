@@ -1,7 +1,7 @@
 use std::sync::{Arc, RwLock};
 
 use neuron::{NeuronInputTopology, NeuronTopology};
-use rand::Rng;
+use rand::{thread_rng, Rng};
 
 pub mod activation;
 pub mod neuron;
@@ -9,7 +9,7 @@ pub mod neuron;
 #[cfg(feature = "serde")]
 use serde::{Deserialize, Serialize};
 
-use crate::prelude::*;
+use crate::{prelude::*, replicator::replicants::NeuronReplicants};
 
 #[derive(Clone, Debug, PartialEq)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
@@ -57,8 +57,12 @@ impl NetworkTopology {
         }
     }
 
-    pub fn replicate(&self, rng: &mut impl Rng) -> Self {
+    pub fn replicate(&self, rng: &mut impl Rng) -> NeuronReplicants {
         TopologyReplicator::new(self).replicate(rng)
+    }
+
+    pub fn replicator(&self) -> TopologyReplicator {
+        TopologyReplicator::new(self)
     }
 
     pub fn neurons(&self) -> &[NeuronTopology] {
@@ -76,7 +80,7 @@ impl NetworkTopology {
 
 impl From<&NetworkTopology> for Network {
     fn from(value: &NetworkTopology) -> Self {
-        let mut neurons: Vec<Arc<RwLock<Neuron>>> = Vec::with_capacity(value.neurons().len());
+        /*let mut neurons: Vec<Arc<RwLock<Neuron>>> = Vec::with_capacity(value.neurons().len());
         let mut input_layer: Vec<Arc<RwLock<Neuron>>> = Vec::new();
         let mut output_layer: Vec<Arc<RwLock<Neuron>>> = Vec::new();
 
@@ -91,7 +95,9 @@ impl From<&NetworkTopology> for Network {
             }
         }
 
-        Network::from_raw_parts(neurons, input_layer, output_layer)
+        Network::from_raw_parts(neurons, input_layer, output_layer)*/
+
+        value.replicate(&mut rand::thread_rng()).to_network()
     }
 }
 #[test]

@@ -3,7 +3,7 @@ use replicants::{NeuronReplicant, NeuronReplicants};
 
 use crate::prelude::*;
 
-mod replicants;
+pub mod replicants;
 
 pub struct TopologyReplicator<'a> {
     parent_neurons: &'a [NeuronTopology],
@@ -18,7 +18,7 @@ impl<'a> TopologyReplicator<'a> {
         }
     }
 
-    pub fn replicate(self, rng: &mut impl Rng) -> NetworkTopology {
+    pub fn replicate(self, rng: &mut impl Rng) -> NeuronReplicants {
         let mut replicants = NeuronReplicants::with_capacity(self.parent_neurons.len());
 
         for neuron in self.parent_neurons.iter() {
@@ -27,7 +27,9 @@ impl<'a> TopologyReplicator<'a> {
 
         replicants.mutate(self.parent_mutation_rate, rng);
 
-        let neuron_topology = replicants.into_neuron_topology();
+        replicants
+
+        /*let neuron_topology = replicants.into_neuron_topology();
 
         let new_mutation_rate = if rng.gen_bool(0.5) {
             self.parent_mutation_rate.saturating_add(1)
@@ -35,7 +37,7 @@ impl<'a> TopologyReplicator<'a> {
             self.parent_mutation_rate.saturating_sub(1)
         };
 
-        NetworkTopology::from_raw_parts(neuron_topology, new_mutation_rate)
+        NetworkTopology::from_raw_parts(neuron_topology, new_mutation_rate)*/
     }
 }
 #[test]
@@ -45,11 +47,13 @@ fn test_simple_replication_properties() {
 
     let simple_network = NetworkTopology::from_raw_parts(simple_neuron_topology, 0); //No mutation occurs, except on the mutation rate.
 
-    let cloned = simple_network.replicate(&mut rand::thread_rng());
+    let cloned = simple_network
+        .replicate(&mut rand::thread_rng())
+        .into_neuron_topology();
 
-    assert_eq!(simple_network.neurons().len(), cloned.neurons().len());
+    assert_eq!(simple_network.neurons().len(), cloned.len());
 
-    for (n1, n2) in simple_network.neurons().iter().zip(cloned.neurons()) {
+    for (n1, n2) in simple_network.neurons().iter().zip(cloned) {
         assert_eq!(n1.is_hidden(), n2.is_hidden());
         assert_eq!(n1.is_input(), n2.is_input());
         assert_eq!(n1.is_output(), n2.is_output());

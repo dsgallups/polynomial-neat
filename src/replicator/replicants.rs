@@ -199,6 +199,26 @@ impl NeuronReplicants {
         }
         neuron_topology
     }
+
+    pub fn to_network(&self) -> Network {
+        let mut neurons: Vec<Arc<RwLock<Neuron>>> = Vec::with_capacity(self.0.len());
+        let mut input_layer: Vec<Arc<RwLock<Neuron>>> = Vec::new();
+        let mut output_layer: Vec<Arc<RwLock<Neuron>>> = Vec::new();
+
+        for neuron_replicant in self.0.iter() {
+            let neuron = neuron_replicant.read().unwrap();
+            let neuron = neuron.to_neuron(&mut neurons, &self.0);
+            let neuron_read = neuron.read().unwrap();
+            if neuron_read.is_input() {
+                input_layer.push(Arc::clone(&neuron));
+            }
+            if neuron_read.is_output() {
+                output_layer.push(Arc::clone(&neuron));
+            }
+        }
+
+        Network::from_raw_parts(neurons, input_layer, output_layer)
+    }
 }
 
 pub struct InputReplicant {
@@ -529,5 +549,47 @@ impl NeuronReplicant {
 
     pub fn trim_inputs(&mut self, ids: Vec<Uuid>) {
         self.neuron_type.trim_inputs(ids)
+    }
+
+    pub fn to_neuron(
+        &self,
+        neurons: &mut Vec<Arc<RwLock<Neuron>>>,
+        replicants: &[Arc<RwLock<NeuronReplicant>>],
+    ) -> Arc<RwLock<Neuron>> {
+        for neuron in neurons.iter() {
+            if neuron.read().unwrap().id() == self.id() {
+                return Arc::clone(neuron);
+            }
+        }
+
+        let neuron_type = if let Some(inputs) = self.inputs() {
+            let mut new_inputs = Vec::with_capacity(inputs.len());
+            for input in inputs {
+                if let Some(input_neuron) = input.neuron() {
+                    let neuron = input_neuron.read().unwrap().to_neuron(neurons, replicants);
+                    new_inputs.push(NeuronInput::new(neuron, input.weight()));
+                }
+            }
+
+            if self.is_hidden() {
+                NeuronType::Hidden {
+                    inputs: new_inputs,
+                    activation: self.activation().unwrap().as_fn(),
+                    bias: self.bias().unwrap(),
+                }
+            } else {
+                NeuronType::Output {
+                    inputs: new_inputs,
+                    activation: self.activation().unwrap().as_fn(),
+                    bias: self.bias().unwrap(),
+                }
+            }
+        } else {
+            NeuronType::Input
+        };
+
+        let neuron = Neuron::new(self.id, neuron_type);
+
+        Arc::new(RwLock::new(neuron))
     }
 }

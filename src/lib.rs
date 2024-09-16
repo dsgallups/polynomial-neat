@@ -19,3 +19,20 @@ pub mod prelude {
         NetworkTopology,
     };
 }
+
+#[test]
+fn test_stack_overflow() {
+    use crate::prelude::*;
+    let some_topology = NetworkTopology::new(20, 7, 80, &mut rand::thread_rng());
+    let mut children = Vec::new();
+    for _ in (0..=50) {
+        let res = some_topology.replicate(&mut rand::thread_rng());
+        children.push(res);
+    }
+
+    for child in children {
+        //println!("{}", child.mutation_rate())
+    }
+
+    //println!("children: {:?}", children);
+}
