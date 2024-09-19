@@ -8,7 +8,7 @@ use uuid::Uuid;
 
 use crate::prelude::*;
 
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub struct NetworkTopology {
     neurons: Vec<Arc<RwLock<NeuronTopology>>>,
     mutation_rate: u8,

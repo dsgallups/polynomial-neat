@@ -2,6 +2,7 @@ use std::hint::unreachable_unchecked;
 
 use rand::Rng;
 
+#[derive(Clone, Debug)]
 pub enum MutationAction {
     SplitConnection,
     Add,

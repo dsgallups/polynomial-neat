@@ -3,7 +3,7 @@ use uuid::Uuid;
 
 use crate::prelude::*;
 
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub enum NeuronTypeTopology {
     Input,
     Hidden {

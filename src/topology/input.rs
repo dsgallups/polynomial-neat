@@ -4,7 +4,7 @@ use rand::Rng;
 
 use super::neuron::NeuronTopology;
 
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub struct InputTopology {
     input: Weak<RwLock<NeuronTopology>>,
     weight: f32,

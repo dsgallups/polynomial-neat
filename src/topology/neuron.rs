@@ -5,7 +5,7 @@ use uuid::Uuid;
 
 use crate::prelude::*;
 
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub struct NeuronTopology {
     id: Uuid,
     neuron_type: NeuronTypeTopology,
@@ -107,7 +107,7 @@ impl NeuronTopology {
     pub fn to_neuron(
         &self,
         neurons: &mut Vec<Arc<RwLock<Neuron>>>,
-        replicants: &[Arc<RwLock<NeuronTopology>>],
+        _replicants: &[Arc<RwLock<NeuronTopology>>],
     ) -> Arc<RwLock<Neuron>> {
         for neuron in neurons.iter() {
             if neuron.read().unwrap().id() == self.id() {
@@ -119,7 +119,7 @@ impl NeuronTopology {
             let mut new_inputs = Vec::with_capacity(inputs.len());
             for input in inputs {
                 if let Some(input_neuron) = input.neuron() {
-                    let neuron = input_neuron.read().unwrap().to_neuron(neurons, replicants);
+                    let neuron = input_neuron.read().unwrap().to_neuron(neurons, _replicants);
                     new_inputs.push(NeuronInput::new(neuron, input.weight()));
                 }
             }
