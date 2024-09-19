@@ -7,10 +7,7 @@ use std::{
 use rand::Rng;
 use uuid::Uuid;
 
-use crate::{
-    prelude::*,
-    topology::{activation::Bias, neuron::NeuronInputTopology},
-};
+use crate::prelude::*;
 
 pub enum MutationAction {
     SplitConnection,
@@ -50,23 +47,94 @@ impl<T: Rng> MutationRateExt for T {
 const MAX_MUTATIONS: u8 = 200;
 
 #[derive(Clone)]
-pub struct NeuronReplicants(Vec<Arc<RwLock<NeuronReplicant>>>);
+pub struct NeuronReplicants {
+    neurons: Vec<Arc<RwLock<NeuronReplicant>>>,
+    mutation_rate: u8,
+}
 
 impl NeuronReplicants {
-    pub fn with_capacity(cap: usize) -> Self {
-        Self(Vec::with_capacity(cap))
+    pub fn new(
+        num_inputs: usize,
+        num_outputs: usize,
+        mutation_rate: u8,
+        rng: &mut impl Rng,
+    ) -> Self {
+        let input_neurons = (0..num_inputs)
+            .map(|_| NeuronReplicant::input(Uuid::new_v4()))
+            .collect::<Vec<_>>();
+
+        let output_neurons = (0..num_outputs)
+            .map(|_| {
+                //a random number of connections to random input neurons;
+                let mut chosen_inputs = (0..rng.gen_range(1..input_neurons.len()))
+                    .map(|_| {
+                        let topology_index = rng.gen_range(0..input_neurons.len());
+                        let input = input_neurons.get(topology_index).unwrap();
+                        (
+                            InputReplicant::new_rand(
+                                Arc::downgrade(input),
+                                &mut rand::thread_rng(),
+                            ),
+                            topology_index,
+                        )
+                    })
+                    .collect::<Vec<_>>();
+
+                chosen_inputs.sort_by_key(|(_, i)| *i);
+                chosen_inputs.dedup_by_key(|(_, i)| *i);
+
+                let chosen_inputs = chosen_inputs.into_iter().map(|(input, _)| input).collect();
+
+                NeuronReplicant::output_rand(chosen_inputs, &mut rand::thread_rng())
+            })
+            .collect::<Vec<_>>();
+
+        let neurons = input_neurons.into_iter().chain(output_neurons).collect();
+
+        Self {
+            neurons,
+            mutation_rate,
+        }
     }
 
     pub fn find_by_id(&self, id: Uuid) -> Option<&Arc<RwLock<NeuronReplicant>>> {
-        self.0.iter().find(|rep| rep.read().unwrap().id == id)
+        self.neurons.iter().find(|rep| rep.read().unwrap().id == id)
     }
 
     pub fn random_neuron(&self, rng: &mut impl Rng) -> &Arc<RwLock<NeuronReplicant>> {
-        self.0.get(rng.gen_range(0..self.0.len())).unwrap()
+        self.neurons
+            .get(rng.gen_range(0..self.neurons.len()))
+            .unwrap()
     }
 
     pub fn push(&mut self, rep: Arc<RwLock<NeuronReplicant>>) {
-        self.0.push(rep);
+        self.neurons.push(rep);
+    }
+
+    pub fn deep_clone(&self) -> NeuronReplicants {
+        let mut new_neurons: Vec<Arc<RwLock<NeuronReplicant>>> =
+            Vec::with_capacity(self.neurons.len());
+
+        for neuron in self.neurons.iter() {
+            let cloned_neuron = neuron.read().unwrap().deep_clone();
+
+            new_neurons.push(Arc::new(RwLock::new(cloned_neuron)));
+        }
+
+        for (original_neuron, new_neuron) in self.neurons.iter().zip(new_neurons.iter()) {
+            let original_neurons = original_neuron.read().unwrap();
+            let og_inputs = original_neurons.inputs();
+
+            todo!()
+        }
+
+        todo!()
+    }
+
+    pub fn replicate(&self, rng: &mut impl Rng) -> NeuronReplicants {
+        let mut child = self.deep_clone();
+        child.mutate(self.mutation_rate, rng);
+        child
     }
 
     pub fn mutate(&mut self, rate: u8, rng: &mut impl Rng) {
@@ -181,7 +249,7 @@ impl NeuronReplicants {
             stack.remove(&node.id());
         }
 
-        for replicant in self.0.iter() {
+        for replicant in self.neurons.iter() {
             let replicant_id = replicant.read().unwrap().id();
             if !visited.contains(&replicant_id) {
                 dfs(&mut replicant.write().unwrap(), &mut visited, &mut stack);
@@ -189,26 +257,14 @@ impl NeuronReplicants {
         }
     }
 
-    pub fn into_neuron_topology(mut self) -> Vec<NeuronTopology> {
-        self.remove_cycles();
-
-        let mut neuron_topology = Vec::new();
-
-        for replicant in self.0.iter() {
-            let replicant = replicant.read().unwrap();
-            replicant.to_topology(&mut neuron_topology);
-        }
-        neuron_topology
-    }
-
     pub fn to_network(&self) -> Network {
-        let mut neurons: Vec<Arc<RwLock<Neuron>>> = Vec::with_capacity(self.0.len());
+        let mut neurons: Vec<Arc<RwLock<Neuron>>> = Vec::with_capacity(self.neurons.len());
         let mut input_layer: Vec<Arc<RwLock<Neuron>>> = Vec::new();
         let mut output_layer: Vec<Arc<RwLock<Neuron>>> = Vec::new();
 
-        for neuron_replicant in self.0.iter() {
+        for neuron_replicant in self.neurons.iter() {
             let neuron = neuron_replicant.read().unwrap();
-            let neuron = neuron.to_neuron(&mut neurons, &self.0);
+            let neuron = neuron.to_neuron(&mut neurons, &self.neurons);
             let neuron_read = neuron.read().unwrap();
             if neuron_read.is_input() {
                 input_layer.push(Arc::clone(&neuron));
@@ -231,6 +287,13 @@ pub struct InputReplicant {
 impl InputReplicant {
     pub fn new(input: Weak<RwLock<NeuronReplicant>>, weight: f32) -> Self {
         Self { input, weight }
+    }
+
+    pub fn new_rand(input: Weak<RwLock<NeuronReplicant>>, rng: &mut impl Rng) -> Self {
+        Self {
+            input,
+            weight: rng.gen_range(-1.0..=1.0),
+        }
     }
 
     pub fn neuron(&self) -> Option<Arc<RwLock<NeuronReplicant>>> {
@@ -272,6 +335,32 @@ impl NeuronTypeReplicant {
             inputs,
             activation,
             bias,
+        }
+    }
+
+    /// resets the inputs and copies activation + bias
+    pub fn deep_clone(&self) -> Self {
+        use NeuronTypeReplicant::*;
+        match self {
+            Input => Input,
+            Hidden {
+                inputs,
+                activation,
+                bias,
+            } => Hidden {
+                inputs: Vec::with_capacity(inputs.len()),
+                activation: *activation,
+                bias: *bias,
+            },
+            Output {
+                inputs,
+                activation,
+                bias,
+            } => Output {
+                inputs: Vec::with_capacity(inputs.len()),
+                activation: *activation,
+                bias: *bias,
+            },
         }
     }
 
@@ -400,8 +489,26 @@ impl NeuronReplicant {
         }))
     }
 
+    pub fn output_rand(inputs: Vec<InputReplicant>, rng: &mut impl Rng) -> Arc<RwLock<Self>> {
+        let neuron_type =
+            NeuronTypeReplicant::output(inputs, Activation::rand(rng), Bias::rand(rng));
+
+        Arc::new(RwLock::new(Self {
+            id: Uuid::new_v4(),
+            neuron_type,
+        }))
+    }
+
     pub fn new(id: Uuid, neuron_type: NeuronTypeReplicant) -> Arc<RwLock<Self>> {
         Arc::new(RwLock::new(Self { id, neuron_type }))
+    }
+
+    /// Note that inputs are reset here.
+    pub fn deep_clone(&self) -> Self {
+        NeuronReplicant {
+            id: Uuid::new_v4(),
+            neuron_type: self.neuron_type.deep_clone(),
+        }
     }
 
     pub fn hidden_rand(inputs: Vec<InputReplicant>, rng: &mut impl Rng) -> Arc<RwLock<Self>> {
@@ -409,99 +516,6 @@ impl NeuronReplicant {
         let neuron_type =
             NeuronTypeReplicant::hidden(inputs, Activation::rand(rng), Bias::rand(rng));
         Self::new(id, neuron_type)
-    }
-
-    /// returns the index of the neuron in the vector
-    pub fn to_topology(&self, neuron_topology: &mut Vec<NeuronTopology>) -> usize {
-        if let Some(index) = neuron_topology
-            .iter()
-            .position(|neuron| neuron.id() == self.id())
-        {
-            return index;
-        }
-
-        let neuron_type = if let Some(inputs) = self.inputs() {
-            let mut new_inputs: Vec<NeuronInputTopology> = Vec::with_capacity(self.num_inputs());
-            for input in inputs {
-                if let Some(input_node) = input.neuron() {
-                    let index = input_node.read().unwrap().to_topology(neuron_topology);
-                    let input_topology = NeuronInputTopology::new(index, input.weight());
-                    new_inputs.push(input_topology);
-                }
-            }
-            if self.is_hidden() {
-                NeuronTopologyType::hidden(
-                    new_inputs,
-                    self.activation().unwrap(),
-                    self.bias().unwrap(),
-                )
-            } else {
-                //is output
-                NeuronTopologyType::output(
-                    new_inputs,
-                    self.activation().unwrap(),
-                    self.bias().unwrap(),
-                )
-            }
-        } else {
-            NeuronTopologyType::Input
-        };
-
-        neuron_topology.push(NeuronTopology::new(self.id(), neuron_type));
-        neuron_topology.len()
-    }
-
-    pub fn from_topology(
-        neuron: &NeuronTopology,
-        replicants: &mut NeuronReplicants,
-        parent_neurons: &[NeuronTopology],
-    ) -> Arc<RwLock<Self>> {
-        let id = neuron.id();
-        if let Some(replicant) = replicants.find_by_id(id) {
-            return Arc::clone(replicant);
-        }
-
-        //not found
-        match neuron.inputs() {
-            None => {
-                let val = NeuronReplicant::input(id);
-                replicants.push(Arc::clone(&val));
-                val
-            }
-            Some(inputs) => {
-                let mut new_inputs = Vec::with_capacity(inputs.len());
-                for input in inputs {
-                    let input_neuron_top = parent_neurons.get(input.topology_index()).unwrap();
-                    let neuron_replicant = match replicants.find_by_id(input_neuron_top.id()) {
-                        Some(replicant) => Arc::downgrade(replicant),
-                        None => Arc::downgrade(&NeuronReplicant::from_topology(
-                            input_neuron_top,
-                            replicants,
-                            parent_neurons,
-                        )),
-                    };
-                    let input_replicant = InputReplicant::new(neuron_replicant, input.weight());
-                    new_inputs.push(input_replicant);
-                }
-
-                let neuron_type = if neuron.is_hidden() {
-                    NeuronTypeReplicant::hidden(
-                        new_inputs,
-                        neuron.activation().unwrap(),
-                        neuron.bias().unwrap(),
-                    )
-                } else {
-                    NeuronTypeReplicant::output(
-                        new_inputs,
-                        neuron.activation().unwrap(),
-                        neuron.bias().unwrap(),
-                    )
-                };
-                let val = NeuronReplicant::new(id, neuron_type);
-                replicants.push(Arc::clone(&val));
-                val
-            }
-        }
     }
 
     pub fn get_random_input_mut(&mut self, rng: &mut impl Rng) -> Option<&mut InputReplicant> {
