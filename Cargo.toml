@@ -18,13 +18,9 @@ version = "0.1.0"
 edition = "2021"
 
 
-[features]
-serde = ["dep:serde", "serde/derive"]
-
 [dependencies]
 rand = "0.8.5"
 rayon = "1.10"
-serde = { version = "1.0", optional = true }
 uuid = { version = "1.10", features = ["rng", "serde", "v4"] }
 
 [dev-dependencies]

@@ -1,11 +1,8 @@
 use std::hint::unreachable_unchecked;
 
 use rand::Rng;
-#[cfg(feature = "serde")]
-use serde::{Deserialize, Serialize};
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
-#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub enum Activation {
     /// Should only be used on hidden and output nodes
     Sigmoid,
