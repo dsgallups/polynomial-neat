@@ -1,5 +1,4 @@
 use rand::Rng;
-use uuid::Uuid;
 
 use crate::prelude::*;
 
@@ -90,19 +89,17 @@ impl NeuronTypeTopology {
     }
 
     // Clears out all inputs whose reference is dropped or match on the provided ids
-    pub fn trim_inputs(&mut self, ids: Vec<Uuid>) {
+    pub fn trim_inputs(&mut self, indices: &[usize]) {
         use NeuronTypeTopology::*;
         match self {
             Input => {}
             Hidden { ref mut inputs, .. } | Output { ref mut inputs, .. } => {
-                inputs.retain(|input| {
-                    let Some(input) = input.neuron() else {
-                        return false;
-                    };
-                    let input = input.read().unwrap();
+                let mut sorted_indices = indices.to_vec();
+                sorted_indices.sort_unstable_by(|a, b| b.cmp(a));
 
-                    !ids.contains(&input.id())
-                });
+                for index in sorted_indices {
+                    inputs.remove(index);
+                }
             }
         }
     }

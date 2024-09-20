@@ -6,9 +6,6 @@ pub mod topology;
 
 //pub mod topology;
 
-#[cfg(test)]
-mod test_utils;
-
 pub mod prelude {
     pub use super::network::Network;
     pub use super::neuron::{Neuron, NeuronInput, NeuronType};

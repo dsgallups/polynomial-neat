@@ -24,4 +24,9 @@ impl NeuronInput {
 
         neuron_value * self.weight
     }
+
+    #[cfg(feature = "debug")]
+    pub fn neuron(&self) -> &Arc<RwLock<Neuron>> {
+        &self.neuron
+    }
 }

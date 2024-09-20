@@ -4,6 +4,7 @@ use std::{
 };
 
 use rand::Rng;
+use tracing::{info, instrument};
 use uuid::Uuid;
 
 use crate::prelude::*;
@@ -121,9 +122,14 @@ impl NetworkTopology {
         }
     }
 
+    #[instrument(skip_all)]
     pub fn replicate(&self, rng: &mut impl Rng) -> NetworkTopology {
         let mut child = self.deep_clone();
         child.mutate(self.mutation_rate, rng);
+        info!("Removing cycles");
+        child.remove_cycles();
+
+        info!("Done Removing cycles");
         child
     }
 
@@ -213,46 +219,93 @@ impl NetworkTopology {
         }
     }
 
-    pub fn remove_cycles(&mut self) {
-        let mut visited = HashSet::new();
+    fn remove_cycles(&mut self) {
         let mut stack = HashSet::new();
+        let mut visited = HashSet::new();
 
-        fn dfs(node: &mut NeuronTopology, visited: &mut HashSet<Uuid>, stack: &mut HashSet<Uuid>) {
-            visited.insert(node.id());
-            stack.insert(node.id());
+        #[derive(Debug)]
+        struct RemoveFrom {
+            remove_from: Uuid,
+            indices: Vec<usize>,
+        }
 
-            let ids_to_remove = if let Some(inputs) = node.inputs() {
-                let mut to_remove: Vec<Uuid> = Vec::new();
-                for input in inputs {
+        fn dfs(
+            node: &NeuronTopology,
+            stack: &mut HashSet<Uuid>,
+            visited: &mut HashSet<Uuid>,
+        ) -> Vec<RemoveFrom> {
+            let node_id = node.id();
+            stack.insert(node_id);
+            visited.insert(node_id);
+
+            let mut total_remove = Vec::new();
+
+            if let Some(inputs) = node.inputs() {
+                let mut self_remove_indices = Vec::new();
+                for (input_indice, input) in inputs.iter().enumerate() {
                     let Some(input_neuron) = input.neuron() else {
-                        // neuron has been dropped already
                         continue;
                     };
                     let input_neuron_id = input_neuron.read().unwrap().id();
+
                     if !visited.contains(&input_neuron_id) {
-                        dfs(&mut input_neuron.write().unwrap(), visited, stack);
+                        let child_result = dfs(&input_neuron.read().unwrap(), stack, visited);
+                        if !child_result.is_empty() {
+                            total_remove.extend(child_result);
+                        }
                     } else if stack.contains(&input_neuron_id) {
-                        to_remove.push(input_neuron_id);
+                        self_remove_indices.push(input_indice);
                     }
                 }
-                to_remove
-            } else {
-                vec![]
-            };
 
-            node.trim_inputs(ids_to_remove);
+                if !self_remove_indices.is_empty() {
+                    total_remove.push(RemoveFrom {
+                        remove_from: node_id,
+                        indices: self_remove_indices,
+                    });
+                }
+            }
 
-            stack.remove(&node.id());
+            stack.remove(&node_id);
+            total_remove
         }
+        loop {
+            let mut remove_queue = Vec::new();
 
-        for replicant in self.neurons.iter() {
-            let replicant_id = replicant.read().unwrap().id();
-            if !visited.contains(&replicant_id) {
-                dfs(&mut replicant.write().unwrap(), &mut visited, &mut stack);
+            for neuron in self.neurons.iter() {
+                let id = neuron.read().unwrap().id();
+
+                if visited.contains(&id) {
+                    continue;
+                }
+
+                let to_remove = dfs(&neuron.read().unwrap(), &mut stack, &mut visited);
+
+                if !to_remove.is_empty() {
+                    remove_queue = to_remove;
+                    break;
+                }
+            }
+            if remove_queue.is_empty() {
+                break;
+            }
+            //info!("remove_queue not empty\nqueue: {:#?}", remove_queue);
+            for neuron in self.neurons.iter() {
+                let id = neuron.read().unwrap().id();
+
+                if let Some(remove) = remove_queue.iter().find(|r| r.remove_from == id) {
+                    let mut write_lock = neuron.write().unwrap();
+                    //info!("write lock on {}", write_lock.id());
+                    write_lock.trim_inputs(remove.indices.as_slice());
+                    //info!("giving back lock on {}", write_lock.id());
+                }
             }
         }
+        /*
+        neuron.write().unwrap().trim_inputs(to_remove);*/
     }
 
+    #[instrument(name = "my_span")]
     pub fn to_network(&self) -> Network {
         let mut neurons: Vec<Arc<RwLock<Neuron>>> = Vec::with_capacity(self.neurons.len());
         let mut input_layer: Vec<Arc<RwLock<Neuron>>> = Vec::new();

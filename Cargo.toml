@@ -17,10 +17,14 @@ license = "MIT OR Apache-2.0"
 version = "0.1.0"
 edition = "2021"
 
+[features]
+debug = []
 
 [dependencies]
 rand = "0.8.5"
 rayon = "1.10"
 uuid = { version = "1.10", features = ["rng", "serde", "v4"] }
+tracing = { version = "0.1", features = ["attributes"] }
+tracing-subscriber = "0.3"
 
 [dev-dependencies]

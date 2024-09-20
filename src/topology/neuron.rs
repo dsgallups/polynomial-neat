@@ -100,7 +100,7 @@ impl NeuronTopology {
         self.neuron_type.is_hidden()
     }
 
-    pub fn trim_inputs(&mut self, ids: Vec<Uuid>) {
+    pub fn trim_inputs(&mut self, ids: &[usize]) {
         self.neuron_type.trim_inputs(ids)
     }
 
