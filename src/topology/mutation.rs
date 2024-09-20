@@ -1,5 +1,3 @@
-use std::hint::unreachable_unchecked;
-
 use rand::Rng;
 
 #[derive(Clone, Debug)]
@@ -33,7 +31,7 @@ impl<T: Rng> MutationRateExt for T {
             4 => MutateBias,
             5 => MutateActivationFunction,
             // Safety: Cannot generate a value more than 5
-            _ => unsafe { unreachable_unchecked() },
+            _ => unreachable!(),
         }
     }
 }

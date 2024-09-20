@@ -19,3 +19,6 @@ pub mod prelude {
         neuron_type::NeuronTypeTopology,
     };
 }
+
+#[cfg(test)]
+mod tests;

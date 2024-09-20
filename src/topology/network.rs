@@ -57,6 +57,13 @@ impl NetworkTopology {
         }
     }
 
+    pub fn neuron_ids(&self) -> Vec<Uuid> {
+        self.neurons
+            .iter()
+            .map(|n| n.read().unwrap().id())
+            .collect()
+    }
+
     pub fn find_by_id(&self, id: Uuid) -> Option<&Arc<RwLock<NeuronTopology>>> {
         self.neurons
             .iter()
@@ -67,6 +74,11 @@ impl NetworkTopology {
         self.neurons
             .get(rng.gen_range(0..self.neurons.len()))
             .unwrap()
+    }
+    pub fn remove_random_neuron(&mut self, rng: &mut impl Rng) {
+        if self.neurons.len() > 1 {
+            self.neurons.remove(rng.gen_range(0..self.neurons.len()));
+        }
     }
 
     pub fn push(&mut self, rep: Arc<RwLock<NeuronTopology>>) {
@@ -185,10 +197,8 @@ impl NetworkTopology {
                     output_neuron.add_input(input);
                 }
                 Remove => {
-                    // remove a random input node, if it has any.
-                    let remove_from = self.random_neuron(rng);
-                    let mut remove_from = remove_from.write().unwrap();
-                    remove_from.remove_random_input(rng);
+                    // remove a random neuron, if it has any.
+                    self.remove_random_neuron(rng);
                 }
                 MutateWeight => {
                     let mut neuron = self.random_neuron(rng).write().unwrap();
