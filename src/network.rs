@@ -60,4 +60,14 @@ impl Network {
             output_layer,
         }
     }
+
+    pub fn num_nodes(&self) -> usize {
+        self.neurons.len()
+    }
+    pub fn num_inputs(&self) -> usize {
+        self.input_layer.len()
+    }
+    pub fn num_outputs(&self) -> usize {
+        self.output_layer.len()
+    }
 }

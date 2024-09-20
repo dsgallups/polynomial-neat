@@ -22,7 +22,13 @@ fn main() {
         running_network = running_topology.to_network();
         let _ = running_network.predict(&[1., 5.]);
 
-        info!("===END GEN ({}) ===\n", gen);
+        info!(
+            "===END GEN ({}) === network_len: ({}, {}, {})\n",
+            gen,
+            running_network.num_nodes(),
+            running_network.num_inputs(),
+            running_network.num_outputs()
+        );
     }
 
     println!("final topology:\n{:#?}", running_topology)

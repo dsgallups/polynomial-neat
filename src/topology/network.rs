@@ -4,7 +4,7 @@ use std::{
 };
 
 use rand::Rng;
-use tracing::{info, instrument};
+use tracing::info;
 use uuid::Uuid;
 
 use crate::prelude::*;
@@ -122,9 +122,13 @@ impl NetworkTopology {
         }
     }
 
-    #[instrument(skip_all)]
+    //#[instrument(skip_all)]
     pub fn replicate(&self, rng: &mut impl Rng) -> NetworkTopology {
         let mut child = self.deep_clone();
+        info!(
+            "replicating child with mutation rate {}",
+            self.mutation_rate
+        );
         child.mutate(self.mutation_rate, rng);
         info!("Removing cycles");
         child.remove_cycles();
@@ -289,15 +293,15 @@ impl NetworkTopology {
             if remove_queue.is_empty() {
                 break;
             }
-            //info!("remove_queue not empty\nqueue: {:#?}", remove_queue);
+            info!("remove_queue not empty\nqueue: {:#?}", remove_queue);
             for neuron in self.neurons.iter() {
                 let id = neuron.read().unwrap().id();
 
                 if let Some(remove) = remove_queue.iter().find(|r| r.remove_from == id) {
                     let mut write_lock = neuron.write().unwrap();
-                    //info!("write lock on {}", write_lock.id());
+                    info!("write lock on {}", write_lock.id());
                     write_lock.trim_inputs(remove.indices.as_slice());
-                    //info!("giving back lock on {}", write_lock.id());
+                    info!("giving back lock on {}", write_lock.id());
                 }
             }
         }
@@ -305,7 +309,7 @@ impl NetworkTopology {
         neuron.write().unwrap().trim_inputs(to_remove);*/
     }
 
-    #[instrument(name = "my_span")]
+    //#[instrument(name = "my_span")]
     pub fn to_network(&self) -> Network {
         let mut neurons: Vec<Arc<RwLock<Neuron>>> = Vec::with_capacity(self.neurons.len());
         let mut input_layer: Vec<Arc<RwLock<Neuron>>> = Vec::new();
@@ -314,6 +318,7 @@ impl NetworkTopology {
         for neuron_replicant in self.neurons.iter() {
             let neuron = neuron_replicant.read().unwrap();
             let neuron = neuron.to_neuron(&mut neurons, &self.neurons);
+            neurons.push(Arc::clone(&neuron));
             let neuron_read = neuron.read().unwrap();
             if neuron_read.is_input() {
                 input_layer.push(Arc::clone(&neuron));
