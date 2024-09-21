@@ -31,6 +31,24 @@ impl NeuronType {
             bias,
         }
     }
+
+    pub fn summarize(&self) -> String {
+        use NeuronType::*;
+        match self {
+            Input => "Input".to_string(),
+            Hidden {
+                inputs,
+                activation: _,
+                bias,
+            } => format!("Hidden: Inputs: {}, Bias: {}", inputs.len(), bias),
+            Output {
+                inputs,
+                activation: _,
+                bias,
+            } => format!("Output: Inputs: {}, Bias: {}", inputs.len(), bias),
+        }
+    }
+
     pub fn output(
         inputs: Vec<NeuronInput>,
         activation: Box<dyn Fn(f32) -> f32 + Send + Sync>,
@@ -131,6 +149,14 @@ impl Neuron {
         self.neuron_type.bias()
     }
 
+    pub fn summarize(&self) -> String {
+        format!(
+            "Neuron: {}, Type: {}",
+            self.id,
+            self.neuron_type.summarize()
+        )
+    }
+
     pub fn activate(&mut self) -> f32 {
         if let Some(val) = self.check_activated() {
             return val;
@@ -148,20 +174,10 @@ impl Neuron {
             .inputs()
             .unwrap()
             .par_iter()
-            .map(|input| {
-                #[cfg(feature = "debug")]
-                {
-                    let input_neuron = input.neuron();
-
-                    let in_id = input_neuron.read().unwrap().id();
-                    if self.id() == in_id {
-                        panic!("Cyclic dependency!");
-                    }
-                }
-                input.get_input_value()
-            })
+            .map(|input| input.get_input_value())
             .sum::<f32>()
             + self.bias().unwrap();
+
         let result = (self.activation().unwrap())(working_value);
 
         self.activated_value = Some(result);

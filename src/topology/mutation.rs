@@ -4,6 +4,7 @@ use rand::Rng;
 pub enum MutationAction {
     SplitConnection,
     AddConnection,
+    AddNeuron,
     RemoveNeuron,
     MutateWeight,
     MutateBias,
@@ -32,21 +33,32 @@ impl<T: Rng> MutationRateExt for T {
             SplitConnection
         } else if rate <= chances.split_connection() + chances.add_connection() {
             AddConnection
+        }
+        // note that the following checks are not else if because the previous checks are not mutually exclusive
+        else if rate
+            <= chances.split_connection() + chances.add_connection() + chances.add_neuron()
+        {
+            AddNeuron
         } else if rate
-            <= chances.split_connection() + chances.add_connection() + chances.remove_connection()
+            <= chances.split_connection()
+                + chances.add_connection()
+                + chances.add_neuron()
+                + chances.remove_neuron()
         {
             RemoveNeuron
         } else if rate
             <= chances.split_connection()
                 + chances.add_connection()
-                + chances.remove_connection()
+                + chances.add_neuron()
+                + chances.remove_neuron()
                 + chances.mutate_weight()
         {
             MutateWeight
         } else if rate
             <= chances.split_connection()
                 + chances.add_connection()
-                + chances.remove_connection()
+                + chances.add_neuron()
+                + chances.remove_neuron()
                 + chances.mutate_weight()
                 + chances.mutate_bias()
         {
@@ -64,7 +76,8 @@ pub struct MutationChances {
     self_mutation: u8,
     split_connection: f32,
     add_connection: f32,
-    remove_connection: f32,
+    add_neuron: f32,
+    remove_neuron: f32,
     mutate_weight: f32,
     mutate_bias: f32,
     mutate_activation_fn: f32,
@@ -72,17 +85,45 @@ pub struct MutationChances {
 
 impl MutationChances {
     pub fn new(self_mutation_rate: u8) -> Self {
-        let value = 100. / 6.;
+        let value = 100. / 7.;
 
         Self {
             self_mutation: self_mutation_rate,
-            remove_connection: value,
+            add_neuron: value,
+            remove_neuron: value,
             mutate_bias: value,
             split_connection: value,
             add_connection: value,
             mutate_activation_fn: value,
             mutate_weight: value,
         }
+    }
+
+    #[allow(clippy::too_many_arguments)]
+    pub fn new_from_raw(
+        self_mutation: u8,
+        split_connection: f32,
+        add_connection: f32,
+        add_neuron: f32,
+        remove_neuron: f32,
+        mutate_weight: f32,
+        mutate_bias: f32,
+        mutate_activation_fn: f32,
+    ) -> Self {
+        let mut new = Self {
+            self_mutation,
+            split_connection,
+            add_connection,
+            add_neuron,
+            remove_neuron,
+            mutate_weight,
+            mutate_bias,
+            mutate_activation_fn,
+        };
+
+        new.recalculate();
+
+        new
     }
 
     pub fn adjust_mutation_chances(&mut self, rng: &mut impl Rng) {
@@ -115,8 +156,11 @@ impl MutationChances {
                 MutationAction::AddConnection => {
                     self.adjust_add_connection(multiply_by);
                 }
+                MutationAction::AddNeuron => {
+                    self.adjust_add_neuron(multiply_by);
+                }
                 MutationAction::RemoveNeuron => {
-                    self.adjust_remove_connection(multiply_by);
+                    self.adjust_remove_neuron(multiply_by);
                 }
                 MutationAction::MutateWeight => {
                     self.adjust_mutate_weight(multiply_by);
@@ -171,8 +215,12 @@ impl MutationChances {
         self.add_connection
     }
 
-    pub fn remove_connection(&self) -> f32 {
-        self.remove_connection
+    pub fn add_neuron(&self) -> f32 {
+        self.add_neuron
+    }
+
+    pub fn remove_neuron(&self) -> f32 {
+        self.remove_neuron
     }
 
     pub fn mutate_weight(&self) -> f32 {
@@ -199,8 +247,14 @@ impl MutationChances {
         self.recalculate();
     }
 
-    fn adjust_remove_connection(&mut self, amt: f32) {
-        self.remove_connection *= amt;
+    fn adjust_add_neuron(&mut self, amt: f32) {
+        self.add_neuron *= amt;
+
+        self.recalculate();
+    }
+
+    fn adjust_remove_neuron(&mut self, amt: f32) {
+        self.remove_neuron *= amt;
 
         self.recalculate();
     }
@@ -226,14 +280,16 @@ impl MutationChances {
     fn recalculate(&mut self) {
         let total = self.split_connection
             + self.add_connection
-            + self.remove_connection
+            + self.add_neuron
+            + self.remove_neuron
             + self.mutate_weight
             + self.mutate_bias
             + self.mutate_activation_fn;
 
         self.split_connection = (self.split_connection * 100.) / total;
         self.add_connection = (self.add_connection * 100.) / total;
-        self.remove_connection = (self.remove_connection * 100.) / total;
+        self.add_neuron = (self.add_neuron * 100.) / total;
+        self.remove_neuron = (self.remove_neuron * 100.) / total;
         self.mutate_weight = (self.mutate_weight * 100.) / total;
         self.mutate_bias = (self.mutate_bias * 100.) / total;
         self.mutate_activation_fn = (self.mutate_activation_fn * 100.) / total;
@@ -260,13 +316,14 @@ pub fn adjust_mutation_chances() {
 
     chances.adjust_add_connection(-10.);
 
-    chances.adjust_remove_connection(10.);
+    chances.adjust_remove_neuron(10.);
 
     chances.adjust_mutate_weight(-10.);
 
     let total = chances.split_connection
         + chances.add_connection
-        + chances.remove_connection
+        + chances.add_neuron
+        + chances.remove_neuron
         + chances.mutate_weight
         + chances.mutate_bias
         + chances.mutate_activation_fn;
@@ -288,7 +345,8 @@ pub fn check_mutate() {
 
         let total = chances.split_connection
             + chances.add_connection
-            + chances.remove_connection
+            + chances.remove_neuron
+            + chances.add_neuron
             + chances.mutate_weight
             + chances.mutate_bias
             + chances.mutate_activation_fn;

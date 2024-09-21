@@ -3,6 +3,7 @@ use std::sync::{Arc, RwLock};
 use rayon::iter::{
     IndexedParallelIterator as _, IntoParallelRefIterator as _, ParallelIterator as _,
 };
+use tracing::info;
 
 use crate::prelude::*;
 
@@ -17,12 +18,15 @@ pub struct Network {
 
 impl Network {
     /// Flushes the previous state of the network and calculates given new inputs.
-    pub fn predict(&self, inputs: &[f32]) -> impl IntoIterator<Item = f32> {
+    pub fn predict(&self, inputs: &[f32]) -> impl Iterator<Item = f32> {
         // reset all states first
+        info!("resetting states");
         self.neurons.par_iter().for_each(|neuron| {
             let mut neuron = neuron.write().unwrap();
             neuron.flush_state();
         });
+
+        info!("setting inputs");
         inputs.par_iter().enumerate().for_each(|(index, value)| {
             let Some(nw) = self.input_layer.get(index) else {
                 return;
@@ -31,6 +35,7 @@ impl Network {
             nw.override_state(*value);
         });
 
+        info!("activating neurons");
         let outputs = self
             .output_layer
             .par_iter()
@@ -42,6 +47,8 @@ impl Network {
                 values
             })
             .collect_vec_list();
+
+        info!("returning outputs");
 
         outputs
             .into_iter()

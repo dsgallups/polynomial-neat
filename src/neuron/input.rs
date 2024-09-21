@@ -17,6 +17,7 @@ impl NeuronInput {
     }
 
     /// applies a weight to the input neuron and returns the result
+    /// this holds a write lock.
     pub fn get_input_value(&self) -> f32 {
         let mut neuron = self.neuron.write().unwrap();
 

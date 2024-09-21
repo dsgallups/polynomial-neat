@@ -4,7 +4,6 @@ use std::{
 };
 
 use rand::Rng;
-use tracing::info;
 use uuid::Uuid;
 
 use crate::prelude::*;
@@ -21,7 +20,7 @@ impl NetworkTopology {
     pub fn new(
         num_inputs: usize,
         num_outputs: usize,
-        mutation_rate: u8,
+        mutation_chances: MutationChances,
         rng: &mut impl Rng,
     ) -> Self {
         let input_neurons = (0..num_inputs)
@@ -55,7 +54,7 @@ impl NetworkTopology {
 
         Self {
             neurons,
-            mutation_chances: MutationChances::new(mutation_rate),
+            mutation_chances,
         }
     }
 
@@ -180,6 +179,44 @@ impl NetworkTopology {
                     //If the arc is removed from the array at this point, it will disappear, and the weak reference will
                     //ultimately be removed.
                 }
+                AddNeuron => {
+                    // add a new neuron to the network with a random input, output, and a random activation function
+
+                    /*let output_neuron = Arc::clone(self.random_neuron(rng));
+
+                    let new_neuron = {
+                        let input_neuron = self.random_neuron(rng);
+
+                        //the input neuron cannot be an output and the output cannot be an input.
+                        {
+                            let input_neuron = input_neuron.read().unwrap();
+                            let output_neuron = output_neuron.read().unwrap();
+
+                            if input_neuron.is_output()
+                                || output_neuron.is_input()
+                                || input_neuron.id() == output_neuron.id()
+                            {
+                                continue;
+                            }
+                        }
+
+                        let input =
+                            InputTopology::new(Arc::downgrade(input_neuron), Bias::rand(rng));
+                        NeuronTopology::new_rand(vec![], rng)
+                    };*/
+
+                    //let new_neuron = NeuronTopology::new_rand(vec![], rng);
+
+                    //self.push(new_neuron);
+
+                    /*let new_replicant_for_output =
+                    InputTopology::new(Arc::downgrade(&new_neuron), Bias::rand(rng));*/
+
+                    /*output_neuron
+                    .write()
+                    .unwrap()
+                    .add_input(new_replicant_for_output);*/
+                }
                 AddConnection => {
                     // the input neuron gets added to the output neuron's list of inputs
                     let output_neuron = self.random_neuron(rng);
@@ -226,57 +263,51 @@ impl NetworkTopology {
     }
 
     fn remove_cycles(&mut self) {
-        let mut stack = HashSet::new();
-        let mut visited = HashSet::new();
-
         #[derive(Debug)]
         struct RemoveFrom {
             remove_from: Uuid,
-            indices: Vec<usize>,
+            index: usize,
         }
 
         fn dfs(
             node: &NeuronTopology,
             stack: &mut HashSet<Uuid>,
             visited: &mut HashSet<Uuid>,
-        ) -> Vec<RemoveFrom> {
+        ) -> Option<RemoveFrom> {
             let node_id = node.id();
             stack.insert(node_id);
             visited.insert(node_id);
 
-            let mut total_remove = Vec::new();
+            let inputs = node.inputs()?;
 
-            if let Some(inputs) = node.inputs() {
-                let mut self_remove_indices = Vec::new();
-                for (input_indice, input) in inputs.iter().enumerate() {
-                    let Some(input_neuron) = input.neuron() else {
-                        continue;
-                    };
-                    let input_neuron_id = input_neuron.read().unwrap().id();
+            for (input_indice, input) in inputs.iter().enumerate() {
+                let Some(input_neuron) = input.neuron() else {
+                    continue;
+                };
+                let input_neuron_id = input_neuron.read().unwrap().id();
 
-                    if !visited.contains(&input_neuron_id) {
-                        let child_result = dfs(&input_neuron.read().unwrap(), stack, visited);
-                        if !child_result.is_empty() {
-                            total_remove.extend(child_result);
-                        }
-                    } else if stack.contains(&input_neuron_id) {
-                        self_remove_indices.push(input_indice);
+                if !visited.contains(&input_neuron_id) {
+                    let child_result = dfs(&input_neuron.read().unwrap(), stack, visited);
+                    if child_result.is_some() {
+                        stack.remove(&node_id);
+                        return child_result;
                     }
-                }
-
-                if !self_remove_indices.is_empty() {
-                    total_remove.push(RemoveFrom {
+                } else if stack.contains(&input_neuron_id) {
+                    stack.remove(&node_id);
+                    return Some(RemoveFrom {
                         remove_from: node_id,
-                        indices: self_remove_indices,
+                        index: input_indice,
                     });
                 }
             }
 
             stack.remove(&node_id);
-            total_remove
+            None
         }
         loop {
-            let mut remove_queue = Vec::new();
+            let mut stack = HashSet::new();
+            let mut visited = HashSet::new();
+            let mut removal = None;
 
             for neuron in self.neurons.iter() {
                 let id = neuron.read().unwrap().id();
@@ -287,26 +318,59 @@ impl NetworkTopology {
 
                 let to_remove = dfs(&neuron.read().unwrap(), &mut stack, &mut visited);
 
-                if !to_remove.is_empty() {
-                    remove_queue = to_remove;
+                if to_remove.is_some() {
+                    removal = to_remove;
                     break;
                 }
             }
-            if remove_queue.is_empty() {
+
+            let Some(removal) = removal else {
                 break;
-            }
-            info!("remove_queue not empty\nqueue: {:#?}", remove_queue);
+            };
+
             for neuron in self.neurons.iter() {
                 let id = neuron.read().unwrap().id();
 
-                if let Some(remove) = remove_queue.iter().find(|r| r.remove_from == id) {
+                if id == removal.remove_from {
                     let mut write_lock = neuron.write().unwrap();
-                    info!("write lock on {}", write_lock.id());
-                    write_lock.trim_inputs(remove.indices.as_slice());
-                    info!("giving back lock on {}", write_lock.id());
+                    write_lock.trim_input(removal.index);
                 }
             }
         }
+
+        /*for neuron in self.neurons.iter() {
+            let to_remove = {
+                let neuron = neuron.read().unwrap();
+
+                let Some(inputs) = neuron.inputs() else {
+                    continue;
+                };
+
+                let mut unique_inputs = HashSet::with_capacity(inputs.len());
+
+                let mut to_remove = Vec::new();
+
+                for (index, input) in inputs.iter().enumerate() {
+                    let Some(neuron) = input.neuron() else {
+                        continue;
+                    };
+
+                    let neuron = neuron.read().unwrap();
+
+                    if unique_inputs.contains(&neuron.id()) {
+                        to_remove.push(index);
+                    } else {
+                        unique_inputs.insert(neuron.id());
+                    }
+                }
+                to_remove
+            };
+
+            if !to_remove.is_empty() {
+                info!("not empty for dupes");
+                neuron.write().unwrap().trim_inputs(to_remove.as_slice());
+            }
+        }*/
         /*
         neuron.write().unwrap().trim_inputs(to_remove);*/
     }
@@ -319,6 +383,7 @@ impl NetworkTopology {
 
         for neuron_replicant in self.neurons.iter() {
             let neuron = neuron_replicant.read().unwrap();
+
             let neuron = neuron.to_neuron(&mut neurons, &self.neurons);
             neurons.push(Arc::clone(&neuron));
             let neuron_read = neuron.read().unwrap();

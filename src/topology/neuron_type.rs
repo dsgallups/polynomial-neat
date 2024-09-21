@@ -36,6 +36,33 @@ impl NeuronTypeTopology {
         }
     }
 
+    pub fn summarize(&self) -> String {
+        use NeuronTypeTopology::*;
+        match self {
+            Input => "Input".to_string(),
+            Hidden {
+                inputs,
+                activation,
+                bias,
+            } => format!(
+                "Hidden: Inputs: {}, Activation: {:?}, Bias: {}",
+                inputs.len(),
+                activation,
+                bias
+            ),
+            Output {
+                inputs,
+                activation,
+                bias,
+            } => format!(
+                "Output: Inputs: {}, Activation: {:?}, Bias: {}",
+                inputs.len(),
+                activation,
+                bias
+            ),
+        }
+    }
+
     pub(super) fn set_inputs(&mut self, new_inputs: Vec<InputTopology>) {
         use NeuronTypeTopology::*;
         match self {
@@ -100,6 +127,18 @@ impl NeuronTypeTopology {
                 for index in sorted_indices {
                     inputs.remove(index);
                 }
+            }
+        }
+    }
+
+    // Clears out all inputs whose reference is dropped or match on the provided ids
+    // note that ordering of the inputs IS NOT PRESERVED. do NOT run this in a loop
+    pub fn trim_input(&mut self, index: usize) {
+        use NeuronTypeTopology::*;
+        match self {
+            Input => {}
+            Hidden { ref mut inputs, .. } | Output { ref mut inputs, .. } => {
+                inputs.swap_remove(index);
             }
         }
     }

@@ -1,6 +1,7 @@
 use std::sync::{Arc, RwLock};
 
 use rand::Rng;
+use tracing::info;
 use uuid::Uuid;
 
 use crate::prelude::*;
@@ -29,7 +30,28 @@ impl NeuronTopology {
         }))
     }
 
+    pub fn summarize(&self) -> String {
+        format!(
+            "NeuronTopology: ID: {}, NeuronType: {}",
+            self.id,
+            self.neuron_type.summarize()
+        )
+    }
+
     pub fn new(id: Uuid, neuron_type: NeuronTypeTopology) -> Arc<RwLock<Self>> {
+        Arc::new(RwLock::new(Self { id, neuron_type }))
+    }
+
+    pub fn new_rand(inputs: Vec<InputTopology>, rng: &mut impl Rng) -> Arc<RwLock<Self>> {
+        let id = Uuid::new_v4();
+        let neuron_type = match rng.gen_range(0..3) {
+            0 => NeuronTypeTopology::hidden(inputs, Activation::rand(rng), Bias::rand(rng)),
+            1 => NeuronTypeTopology::output(inputs, Activation::rand(rng), Bias::rand(rng)),
+            _ => NeuronTypeTopology::input(),
+        };
+
+        info!("NeuronTopology::new_rand: {}", neuron_type.summarize());
+
         Arc::new(RwLock::new(Self { id, neuron_type }))
     }
 
@@ -100,8 +122,13 @@ impl NeuronTopology {
         self.neuron_type.is_hidden()
     }
 
-    pub fn trim_inputs(&mut self, ids: &[usize]) {
-        self.neuron_type.trim_inputs(ids)
+    pub fn trim_inputs(&mut self, indices: &[usize]) {
+        self.neuron_type.trim_inputs(indices)
+    }
+
+    /// note that ordering of the inputs IS NOT PRESERVED. do NOT run this in a loop
+    pub fn trim_input(&mut self, index: usize) {
+        self.neuron_type.trim_input(index)
     }
 
     pub fn to_neuron(
