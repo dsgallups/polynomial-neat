@@ -9,7 +9,6 @@ pub mod topology;
 pub mod prelude {
     pub use super::network::Network;
     pub use super::neuron::{Neuron, NeuronInput, NeuronType};
-    pub(crate) use super::topology::mutation::MutationRateExt;
     pub use super::topology::{
         activation::{Activation, Bias},
         input::InputTopology,

@@ -9,10 +9,12 @@ use uuid::Uuid;
 
 use crate::prelude::*;
 
+use super::mutation::MutationChances;
+
 #[derive(Clone, Debug)]
 pub struct NetworkTopology {
     neurons: Vec<Arc<RwLock<NeuronTopology>>>,
-    mutation_rate: u8,
+    mutation_chances: MutationChances,
 }
 
 impl NetworkTopology {
@@ -53,7 +55,7 @@ impl NetworkTopology {
 
         Self {
             neurons,
-            mutation_rate,
+            mutation_chances: MutationChances::new(mutation_rate),
         }
     }
 
@@ -130,31 +132,29 @@ impl NetworkTopology {
 
         NetworkTopology {
             neurons: new_neurons,
-            mutation_rate: self.mutation_rate,
+            mutation_chances: self.mutation_chances,
         }
     }
 
     //#[instrument(skip_all)]
     pub fn replicate(&self, rng: &mut impl Rng) -> NetworkTopology {
         let mut child = self.deep_clone();
-        info!(
-            "replicating child with mutation rate {}",
-            self.mutation_rate
-        );
-        child.mutate(self.mutation_rate, rng);
-        info!("Removing cycles");
+
+        let actions = self.mutation_chances.gen_mutation_actions(rng);
+        child.mutate(actions.as_slice(), rng);
+
+        child.mutation_chances.adjust_mutation_chances(rng);
+
         child.remove_cycles();
 
-        info!("Done Removing cycles");
         child
     }
 
-    pub fn mutate(&mut self, rate: u8, rng: &mut impl Rng) {
+    pub fn mutate(&mut self, actions: &[MutationAction], rng: &mut impl Rng) {
         use MutationAction::*;
-        let mut mutation_count = 0;
 
-        while rng.gen_rate() <= rate && mutation_count < MAX_MUTATIONS {
-            match rng.gen_mutation_action() {
+        for action in actions {
+            match action {
                 SplitConnection => {
                     // clone the arc to borrow later
                     let neuron_to_split = Arc::clone(self.random_neuron(rng));
@@ -180,7 +180,7 @@ impl NetworkTopology {
                     //If the arc is removed from the array at this point, it will disappear, and the weak reference will
                     //ultimately be removed.
                 }
-                Add => {
+                AddConnection => {
                     // the input neuron gets added to the output neuron's list of inputs
                     let output_neuron = self.random_neuron(rng);
                     let input_neuron = self.random_neuron(rng);
@@ -196,7 +196,7 @@ impl NetworkTopology {
                     let input = InputTopology::new(Arc::downgrade(input_neuron), Bias::rand(rng));
                     output_neuron.add_input(input);
                 }
-                Remove => {
+                RemoveNeuron => {
                     // remove a random neuron, if it has any.
                     self.remove_random_neuron(rng);
                 }
@@ -221,14 +221,6 @@ impl NetworkTopology {
                     };
                     *bias += rng.gen_range(-1.0..=1.0);
                 }
-            }
-
-            mutation_count += 1;
-
-            if rng.gen_bool(0.5) {
-                self.mutation_rate = self.mutation_rate.saturating_add(1);
-            } else {
-                self.mutation_rate = self.mutation_rate.saturating_sub(1);
             }
         }
     }
