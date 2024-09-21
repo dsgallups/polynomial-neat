@@ -95,6 +95,10 @@ impl Neuron {
         }
     }
 
+    pub fn inputs(&self) -> Option<&[NeuronInput]> {
+        self.neuron_type.inputs()
+    }
+
     pub fn id(&self) -> Uuid {
         self.id
     }

@@ -95,7 +95,7 @@ impl MutationChances {
         mutate_bias: f32,
         mutate_activation_fn: f32,
     ) -> Self {
-        Self {
+        let mut new = Self {
             self_mutation,
             split_connection,
             add_connection,
@@ -103,7 +103,9 @@ impl MutationChances {
             mutate_weight,
             mutate_bias,
             mutate_activation_fn,
-        }
+        };
+        new.recalculate();
+        new
     }
 
     pub fn adjust_mutation_chances(&mut self, rng: &mut impl Rng) {

@@ -61,6 +61,15 @@ impl Network {
         }
     }
 
+    pub fn summarize(&self) -> String {
+        format!(
+            "Network with \n{} total nodes\n{} input nodes\n{} output nodes",
+            self.num_nodes(),
+            self.num_inputs(),
+            self.num_outputs()
+        )
+    }
+
     pub fn num_nodes(&self) -> usize {
         self.neurons.len()
     }
@@ -69,5 +78,47 @@ impl Network {
     }
     pub fn num_outputs(&self) -> usize {
         self.output_layer.len()
+    }
+}
+
+#[test]
+fn all_outputs_have_at_least_one_input() {
+    use tracing::info;
+    let mutation_chances = MutationChances::new_from_raw(3, 80., 50., 5., 60., 20., 10.);
+
+    let mut running_topology =
+        NetworkTopology::new(20, 7, mutation_chances, &mut rand::thread_rng());
+
+    #[allow(unused_assignments)]
+    let mut running_network = running_topology.to_network();
+
+    for gen in 0..100000 {
+        info!("===NEW GEN ({}) ===", gen);
+        running_topology = running_topology.replicate(&mut rand::thread_rng());
+        info!(
+            "Mutation chances: \n{:#?}",
+            running_topology.mutation_chances()
+        );
+
+        //let debug_info = format!("{:#?}", running_topology);
+
+        //fs::write(format!("./outputs/org_{}.dbg", gen), debug_info).unwrap();
+
+        running_network = running_topology.to_network();
+        let result = running_network.predict(&[1., 5.]).collect::<Vec<f32>>();
+
+        for output in running_network.output_layer.iter() {
+            let output = output.read().unwrap();
+            let inputs = output.inputs().unwrap();
+            assert!(!inputs.is_empty());
+        }
+        info!(
+            "\nresult: {:?}, network_len: ({}, {}, {})\n===END GEN ({}) ===",
+            result,
+            running_network.num_nodes(),
+            running_network.num_inputs(),
+            running_network.num_outputs(),
+            gen,
+        );
     }
 }

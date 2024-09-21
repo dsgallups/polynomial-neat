@@ -9,7 +9,7 @@ fn main() {
     let mutation_chances = MutationChances::new_from_raw(3, 80., 50., 5., 60., 20., 10.);
 
     let mut running_topology =
-        NetworkTopology::new(2, 2, mutation_chances, &mut rand::thread_rng());
+        NetworkTopology::new(20, 7, mutation_chances, &mut rand::thread_rng());
 
     #[allow(unused_assignments)]
     let mut running_network = running_topology.to_network();

@@ -12,7 +12,7 @@ pub mod prelude {
     pub use super::topology::{
         activation::{Activation, Bias},
         input::InputTopology,
-        mutation::{MutationAction, MAX_MUTATIONS},
+        mutation::{MutationAction, MutationChances, MAX_MUTATIONS},
         network::NetworkTopology,
         neuron::NeuronTopology,
         neuron_type::NeuronTypeTopology,
