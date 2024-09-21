@@ -31,16 +31,6 @@ impl Network {
             nw.override_state(*value);
         });
 
-        // override the state of the input layer
-        for (i, value) in inputs.iter().enumerate() {
-            let Some(nw) = self.input_layer.get(i) else {
-                break; // mismatch in input count and output count, which is fine.
-            };
-            // we forcefully hold the lock here since these need to be loaded first.
-            let mut neuron = nw.write().unwrap();
-            neuron.override_state(*value);
-        }
-
         let outputs = self
             .output_layer
             .par_iter()
@@ -69,5 +59,15 @@ impl Network {
             input_layer,
             output_layer,
         }
+    }
+
+    pub fn num_nodes(&self) -> usize {
+        self.neurons.len()
+    }
+    pub fn num_inputs(&self) -> usize {
+        self.input_layer.len()
+    }
+    pub fn num_outputs(&self) -> usize {
+        self.output_layer.len()
     }
 }

@@ -148,7 +148,18 @@ impl Neuron {
             .inputs()
             .unwrap()
             .par_iter()
-            .map(|input| input.get_input_value())
+            .map(|input| {
+                #[cfg(feature = "debug")]
+                {
+                    let input_neuron = input.neuron();
+
+                    let in_id = input_neuron.read().unwrap().id();
+                    if self.id() == in_id {
+                        panic!("Cyclic dependency!");
+                    }
+                }
+                input.get_input_value()
+            })
             .sum::<f32>()
             + self.bias().unwrap();
         let result = (self.activation().unwrap())(working_value);

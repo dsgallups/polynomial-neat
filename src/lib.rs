@@ -2,20 +2,23 @@ pub mod neuron;
 
 pub mod network;
 
-pub mod replicator;
-
 pub mod topology;
 
-#[cfg(test)]
-mod test_utils;
+//pub mod topology;
 
 pub mod prelude {
     pub use super::network::Network;
     pub use super::neuron::{Neuron, NeuronInput, NeuronType};
-    pub use super::replicator::TopologyReplicator;
+    pub(crate) use super::topology::mutation::MutationRateExt;
     pub use super::topology::{
-        activation::Activation,
-        neuron::{NeuronInputTopology, NeuronTopology, NeuronTopologyType},
-        NetworkTopology,
+        activation::{Activation, Bias},
+        input::InputTopology,
+        mutation::{MutationAction, MAX_MUTATIONS},
+        network::NetworkTopology,
+        neuron::NeuronTopology,
+        neuron_type::NeuronTypeTopology,
     };
 }
+
+#[cfg(test)]
+mod tests;
