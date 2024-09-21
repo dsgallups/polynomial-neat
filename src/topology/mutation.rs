@@ -85,6 +85,27 @@ impl MutationChances {
         }
     }
 
+    #[allow(clippy::type_complexity)]
+    pub fn new_from_raw(
+        self_mutation: u8,
+        split_connection: f32,
+        add_connection: f32,
+        remove_connection: f32,
+        mutate_weight: f32,
+        mutate_bias: f32,
+        mutate_activation_fn: f32,
+    ) -> Self {
+        Self {
+            self_mutation,
+            split_connection,
+            add_connection,
+            remove_connection,
+            mutate_weight,
+            mutate_bias,
+            mutate_activation_fn,
+        }
+    }
+
     pub fn adjust_mutation_chances(&mut self, rng: &mut impl Rng) {
         use MutationAction::*;
         const MAX_LOOP: u8 = 5;
@@ -100,32 +121,28 @@ impl MutationChances {
             };
 
             // Generate a random number between 1.0 and 10.0
-            let value = rng.gen_range(1.0..=10.0);
+            let value = rng.gen_range(0.0..=5.0);
 
-            let multiply_by = if rng.gen_bool(0.5) {
-                value
-            } else {
-                1.0 / value
-            };
+            let add_to = if rng.gen_bool(0.5) { -value } else { value };
 
             match action {
                 MutationAction::SplitConnection => {
-                    self.adjust_split_connection(multiply_by);
+                    self.adjust_split_connection(add_to);
                 }
                 MutationAction::AddConnection => {
-                    self.adjust_add_connection(multiply_by);
+                    self.adjust_add_connection(add_to);
                 }
                 MutationAction::RemoveNeuron => {
-                    self.adjust_remove_connection(multiply_by);
+                    self.adjust_remove_connection(add_to);
                 }
                 MutationAction::MutateWeight => {
-                    self.adjust_mutate_weight(multiply_by);
+                    self.adjust_mutate_weight(add_to);
                 }
                 MutationAction::MutateBias => {
-                    self.adjust_mutate_bias(multiply_by);
+                    self.adjust_mutate_bias(add_to);
                 }
                 MutationAction::MutateActivationFunction => {
-                    self.adjust_mutate_activation_fn(multiply_by);
+                    self.adjust_mutate_activation_fn(add_to);
                 }
             }
 
@@ -188,37 +205,61 @@ impl MutationChances {
     }
 
     fn adjust_split_connection(&mut self, amt: f32) {
-        self.split_connection *= amt;
+        self.split_connection += amt;
+
+        if self.split_connection < 0. {
+            self.split_connection = 0.;
+        }
 
         self.recalculate();
     }
 
     fn adjust_add_connection(&mut self, amt: f32) {
-        self.add_connection *= amt;
+        self.add_connection += amt;
+
+        if self.add_connection < 0. {
+            self.add_connection = 0.;
+        }
 
         self.recalculate();
     }
 
     fn adjust_remove_connection(&mut self, amt: f32) {
-        self.remove_connection *= amt;
+        self.remove_connection += amt;
+
+        if self.remove_connection < 0. {
+            self.remove_connection = 0.;
+        }
 
         self.recalculate();
     }
 
     fn adjust_mutate_weight(&mut self, amt: f32) {
-        self.mutate_weight *= amt;
+        self.mutate_weight += amt;
+
+        if self.mutate_weight < 0. {
+            self.mutate_weight = 0.;
+        }
 
         self.recalculate();
     }
 
     fn adjust_mutate_bias(&mut self, amt: f32) {
-        self.mutate_bias *= amt;
+        self.mutate_bias += amt;
+
+        if self.mutate_bias < 0. {
+            self.mutate_bias = 0.;
+        }
 
         self.recalculate();
     }
 
     fn adjust_mutate_activation_fn(&mut self, amt: f32) {
         self.mutate_activation_fn += amt;
+
+        if self.mutate_activation_fn < 0. {
+            self.mutate_activation_fn = 0.;
+        }
 
         self.recalculate();
     }
@@ -242,8 +283,10 @@ impl MutationChances {
     pub fn gen_mutation_actions(&self, rng: &mut impl Rng) -> Vec<MutationAction> {
         let mut actions = Vec::with_capacity(MAX_MUTATIONS as usize);
 
-        for _ in 0..MAX_MUTATIONS {
+        let mut loop_count = 0;
+        while rng.gen_rate() < self.self_mutation() && loop_count < MAX_MUTATIONS {
             actions.push(rng.gen_mutation_action(self));
+            loop_count += 1;
         }
 
         actions

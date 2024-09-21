@@ -4,7 +4,6 @@ use std::{
 };
 
 use rand::Rng;
-use tracing::info;
 use uuid::Uuid;
 
 use crate::prelude::*;
@@ -21,7 +20,7 @@ impl NetworkTopology {
     pub fn new(
         num_inputs: usize,
         num_outputs: usize,
-        mutation_rate: u8,
+        mutation_chances: MutationChances,
         rng: &mut impl Rng,
     ) -> Self {
         let input_neurons = (0..num_inputs)
@@ -55,7 +54,7 @@ impl NetworkTopology {
 
         Self {
             neurons,
-            mutation_chances: MutationChances::new(mutation_rate),
+            mutation_chances,
         }
     }
 
@@ -64,6 +63,10 @@ impl NetworkTopology {
             .iter()
             .map(|n| n.read().unwrap().id())
             .collect()
+    }
+
+    pub fn mutation_chances(&self) -> &MutationChances {
+        &self.mutation_chances
     }
 
     pub fn find_by_id(&self, id: Uuid) -> Option<&Arc<RwLock<NeuronTopology>>> {
@@ -79,7 +82,16 @@ impl NetworkTopology {
     }
     pub fn remove_random_neuron(&mut self, rng: &mut impl Rng) {
         if self.neurons.len() > 1 {
-            self.neurons.remove(rng.gen_range(0..self.neurons.len()));
+            let index = rng.gen_range(0..self.neurons.len());
+
+            {
+                let neuron_props = self.neurons.get(index).unwrap().read().unwrap();
+                if neuron_props.is_input() || neuron_props.is_output() {
+                    return;
+                }
+            }
+
+            self.neurons.remove(index);
         }
     }
 
@@ -295,15 +307,12 @@ impl NetworkTopology {
             if remove_queue.is_empty() {
                 break;
             }
-            info!("remove_queue not empty\nqueue: {:#?}", remove_queue);
             for neuron in self.neurons.iter() {
                 let id = neuron.read().unwrap().id();
 
                 if let Some(remove) = remove_queue.iter().find(|r| r.remove_from == id) {
                     let mut write_lock = neuron.write().unwrap();
-                    info!("write lock on {}", write_lock.id());
                     write_lock.trim_inputs(remove.indices.as_slice());
-                    info!("giving back lock on {}", write_lock.id());
                 }
             }
         }

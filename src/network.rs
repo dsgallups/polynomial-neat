@@ -17,7 +17,7 @@ pub struct Network {
 
 impl Network {
     /// Flushes the previous state of the network and calculates given new inputs.
-    pub fn predict(&self, inputs: &[f32]) -> impl IntoIterator<Item = f32> {
+    pub fn predict(&self, inputs: &[f32]) -> impl Iterator<Item = f32> {
         // reset all states first
         self.neurons.par_iter().for_each(|neuron| {
             let mut neuron = neuron.write().unwrap();
