@@ -19,7 +19,7 @@ edition = "2021"
 
 [features]
 # debug = ["dep:tracing", "dep:tracing-subscriber"]
-debug = []
+serde = ["dep:serde"]
 
 [dependencies]
 tracing = { version = "0.1", features = ["attributes"] }
@@ -27,5 +27,6 @@ tracing-subscriber = { version = "0.3" }
 rand = "0.8.5"
 rayon = "1.10"
 uuid = { version = "1.10", features = ["rng", "serde", "v4"] }
+serde = { version = "1.0", features = ["derive"], optional = true }
 
 [dev-dependencies]

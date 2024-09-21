@@ -4,6 +4,9 @@ pub mod network;
 
 pub mod topology;
 
+#[cfg(feature = "serde")]
+pub mod checkpoint;
+
 //pub mod topology;
 
 pub mod prelude {
