@@ -58,6 +58,37 @@ impl NetworkTopology {
         }
     }
 
+    pub fn new_thoroughly_connected(
+        num_inputs: usize,
+        num_outputs: usize,
+        mutation_chances: MutationChances,
+        rng: &mut impl Rng,
+    ) -> Self {
+        let input_neurons = (0..num_inputs)
+            .map(|_| NeuronTopology::input(Uuid::new_v4()))
+            .collect::<Vec<_>>();
+
+        let output_neurons = (0..num_outputs)
+            .map(|_| {
+                //every output neuron is connected to every input neuron
+
+                let chosen_inputs = input_neurons
+                    .iter()
+                    .map(|input| InputTopology::new_rand(Arc::downgrade(input), rng))
+                    .collect::<Vec<_>>();
+
+                NeuronTopology::output_rand(chosen_inputs, &mut rand::thread_rng())
+            })
+            .collect::<Vec<_>>();
+
+        let neurons = input_neurons.into_iter().chain(output_neurons).collect();
+
+        Self {
+            neurons,
+            mutation_chances,
+        }
+    }
+
     pub fn neuron_ids(&self) -> Vec<Uuid> {
         self.neurons
             .iter()

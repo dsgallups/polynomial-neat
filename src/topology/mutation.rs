@@ -206,6 +206,30 @@ impl MutationChances {
         self.mutate_activation_fn
     }
 
+    fn adjust(&mut self, cmd: impl FnOnce(&mut Self)) {
+        cmd(self);
+        if self.split_connection < 0. {
+            self.split_connection = 0.;
+        }
+        if self.add_connection < 0. {
+            self.add_connection = 0.;
+        }
+        if self.remove_connection < 0. {
+            self.remove_connection = 0.;
+        }
+        if self.mutate_weight < 0. {
+            self.mutate_weight = 0.;
+        }
+        if self.mutate_bias < 0. {
+            self.mutate_bias = 0.;
+        }
+        if self.mutate_activation_fn < 0. {
+            self.mutate_activation_fn = 0.;
+        }
+
+        self.recalculate();
+    }
+
     fn adjust_split_connection(&mut self, amt: f32) {
         self.split_connection += amt;
 
@@ -284,9 +308,22 @@ impl MutationChances {
 
     pub fn gen_mutation_actions(&self, rng: &mut impl Rng) -> Vec<MutationAction> {
         let mut actions = Vec::with_capacity(MAX_MUTATIONS as usize);
+        let mut replica = *self;
 
         let mut loop_count = 0;
-        while rng.gen_rate() < self.self_mutation() && loop_count < MAX_MUTATIONS {
+        while rng.gen_rate() < replica.self_mutation() && loop_count < MAX_MUTATIONS {
+            let action = rng.gen_mutation_action(&replica);
+            match action {
+                MutationAction::SplitConnection => replica.adjust(|s| s.split_connection /= 2.),
+                MutationAction::AddConnection => replica.adjust(|s| s.add_connection /= 2.),
+                MutationAction::RemoveNeuron => replica.adjust(|s| s.remove_connection /= 2.),
+                MutationAction::MutateWeight => replica.adjust(|s| s.mutate_weight /= 2.),
+                MutationAction::MutateBias => replica.adjust(|s| s.mutate_bias /= 2.),
+                MutationAction::MutateActivationFunction => {
+                    replica.adjust(|s| s.mutate_activation_fn /= 2.)
+                }
+            }
+
             actions.push(rng.gen_mutation_action(self));
             loop_count += 1;
         }
