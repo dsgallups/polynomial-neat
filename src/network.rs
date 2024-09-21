@@ -83,7 +83,6 @@ impl Network {
 
 #[test]
 fn all_outputs_have_at_least_one_input() {
-    use tracing::info;
     let mutation_chances = MutationChances::new_from_raw(3, 80., 50., 5., 60., 20., 10.);
 
     let mut running_topology =
@@ -93,12 +92,8 @@ fn all_outputs_have_at_least_one_input() {
     let mut running_network = running_topology.to_network();
 
     for gen in 0..100000 {
-        info!("===NEW GEN ({}) ===", gen);
+        println!("gen: {}", gen);
         running_topology = running_topology.replicate(&mut rand::thread_rng());
-        info!(
-            "Mutation chances: \n{:#?}",
-            running_topology.mutation_chances()
-        );
 
         //let debug_info = format!("{:#?}", running_topology);
 
@@ -112,13 +107,5 @@ fn all_outputs_have_at_least_one_input() {
             let inputs = output.inputs().unwrap();
             assert!(!inputs.is_empty());
         }
-        info!(
-            "\nresult: {:?}, network_len: ({}, {}, {})\n===END GEN ({}) ===",
-            result,
-            running_network.num_nodes(),
-            running_network.num_inputs(),
-            running_network.num_outputs(),
-            gen,
-        );
     }
 }
