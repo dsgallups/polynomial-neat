@@ -4,22 +4,23 @@ use std::{
 };
 
 use rand::Rng;
-use tracing::info;
 use uuid::Uuid;
 
 use crate::prelude::*;
 
+use super::mutation::MutationChances;
+
 #[derive(Clone, Debug)]
 pub struct NetworkTopology {
     neurons: Vec<Arc<RwLock<NeuronTopology>>>,
-    mutation_rate: u8,
+    mutation_chances: MutationChances,
 }
 
 impl NetworkTopology {
     pub fn new(
         num_inputs: usize,
         num_outputs: usize,
-        mutation_rate: u8,
+        mutation_chances: MutationChances,
         rng: &mut impl Rng,
     ) -> Self {
         let input_neurons = (0..num_inputs)
@@ -53,7 +54,38 @@ impl NetworkTopology {
 
         Self {
             neurons,
-            mutation_rate,
+            mutation_chances,
+        }
+    }
+
+    pub fn new_thoroughly_connected(
+        num_inputs: usize,
+        num_outputs: usize,
+        mutation_chances: MutationChances,
+        rng: &mut impl Rng,
+    ) -> Self {
+        let input_neurons = (0..num_inputs)
+            .map(|_| NeuronTopology::input(Uuid::new_v4()))
+            .collect::<Vec<_>>();
+
+        let output_neurons = (0..num_outputs)
+            .map(|_| {
+                //every output neuron is connected to every input neuron
+
+                let chosen_inputs = input_neurons
+                    .iter()
+                    .map(|input| InputTopology::new_rand(Arc::downgrade(input), rng))
+                    .collect::<Vec<_>>();
+
+                NeuronTopology::output_rand(chosen_inputs, &mut rand::thread_rng())
+            })
+            .collect::<Vec<_>>();
+
+        let neurons = input_neurons.into_iter().chain(output_neurons).collect();
+
+        Self {
+            neurons,
+            mutation_chances,
         }
     }
 
@@ -62,6 +94,10 @@ impl NetworkTopology {
             .iter()
             .map(|n| n.read().unwrap().id())
             .collect()
+    }
+
+    pub fn mutation_chances(&self) -> &MutationChances {
+        &self.mutation_chances
     }
 
     pub fn find_by_id(&self, id: Uuid) -> Option<&Arc<RwLock<NeuronTopology>>> {
@@ -77,7 +113,16 @@ impl NetworkTopology {
     }
     pub fn remove_random_neuron(&mut self, rng: &mut impl Rng) {
         if self.neurons.len() > 1 {
-            self.neurons.remove(rng.gen_range(0..self.neurons.len()));
+            let index = rng.gen_range(0..self.neurons.len());
+
+            {
+                let neuron_props = self.neurons.get(index).unwrap().read().unwrap();
+                if neuron_props.is_input() || neuron_props.is_output() {
+                    return;
+                }
+            }
+
+            self.neurons.remove(index);
         }
     }
 
@@ -130,31 +175,29 @@ impl NetworkTopology {
 
         NetworkTopology {
             neurons: new_neurons,
-            mutation_rate: self.mutation_rate,
+            mutation_chances: self.mutation_chances,
         }
     }
 
     //#[instrument(skip_all)]
     pub fn replicate(&self, rng: &mut impl Rng) -> NetworkTopology {
         let mut child = self.deep_clone();
-        info!(
-            "replicating child with mutation rate {}",
-            self.mutation_rate
-        );
-        child.mutate(self.mutation_rate, rng);
-        info!("Removing cycles");
+
+        let actions = self.mutation_chances.gen_mutation_actions(rng);
+        child.mutate(actions.as_slice(), rng);
+
+        child.mutation_chances.adjust_mutation_chances(rng);
+
         child.remove_cycles();
 
-        info!("Done Removing cycles");
         child
     }
 
-    pub fn mutate(&mut self, rate: u8, rng: &mut impl Rng) {
+    pub fn mutate(&mut self, actions: &[MutationAction], rng: &mut impl Rng) {
         use MutationAction::*;
-        let mut mutation_count = 0;
 
-        while rng.gen_rate() <= rate && mutation_count < MAX_MUTATIONS {
-            match rng.gen_mutation_action() {
+        for action in actions {
+            match action {
                 SplitConnection => {
                     // clone the arc to borrow later
                     let neuron_to_split = Arc::clone(self.random_neuron(rng));
@@ -180,7 +223,7 @@ impl NetworkTopology {
                     //If the arc is removed from the array at this point, it will disappear, and the weak reference will
                     //ultimately be removed.
                 }
-                Add => {
+                AddConnection => {
                     // the input neuron gets added to the output neuron's list of inputs
                     let output_neuron = self.random_neuron(rng);
                     let input_neuron = self.random_neuron(rng);
@@ -196,7 +239,7 @@ impl NetworkTopology {
                     let input = InputTopology::new(Arc::downgrade(input_neuron), Bias::rand(rng));
                     output_neuron.add_input(input);
                 }
-                Remove => {
+                RemoveNeuron => {
                     // remove a random neuron, if it has any.
                     self.remove_random_neuron(rng);
                 }
@@ -221,14 +264,6 @@ impl NetworkTopology {
                     };
                     *bias += rng.gen_range(-1.0..=1.0);
                 }
-            }
-
-            mutation_count += 1;
-
-            if rng.gen_bool(0.5) {
-                self.mutation_rate = self.mutation_rate.saturating_add(1);
-            } else {
-                self.mutation_rate = self.mutation_rate.saturating_sub(1);
             }
         }
     }
@@ -303,15 +338,12 @@ impl NetworkTopology {
             if remove_queue.is_empty() {
                 break;
             }
-            info!("remove_queue not empty\nqueue: {:#?}", remove_queue);
             for neuron in self.neurons.iter() {
                 let id = neuron.read().unwrap().id();
 
                 if let Some(remove) = remove_queue.iter().find(|r| r.remove_from == id) {
                     let mut write_lock = neuron.write().unwrap();
-                    info!("write lock on {}", write_lock.id());
                     write_lock.trim_inputs(remove.indices.as_slice());
-                    info!("giving back lock on {}", write_lock.id());
                 }
             }
         }
