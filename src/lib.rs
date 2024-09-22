@@ -1,12 +1,10 @@
+pub mod candle_net;
 pub mod simple_net;
-
 pub mod topology;
-
-//pub mod topology;
 
 pub mod prelude {
     pub use super::simple_net::{
-        input::NeuronInput, network::Network, neuron::Neuron, neuron_type::NeuronType,
+        input::NeuronInput, network::SimpleNetwork, neuron::Neuron, neuron_type::NeuronType,
     };
     pub use super::topology::{
         activation::{Activation, Bias},

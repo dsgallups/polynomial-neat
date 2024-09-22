@@ -101,11 +101,27 @@ name = "candle-neat"
 version = "0.1.0"
 dependencies = [
  "candle-core",
+ "candle-nn",
  "rand",
  "rayon",
  "tracing",
  "tracing-subscriber",
  "uuid",
+]
+
+[[package]]
+name = "candle-nn"
+version = "0.7.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "89b29776b10a645a4d561c8178b19a5845e1c7b8207ba4f9068c5a320c124f94"
+dependencies = [
+ "candle-core",
+ "half",
+ "num-traits",
+ "rayon",
+ "safetensors",
+ "serde",
+ "thiserror",
 ]
 
 [[package]]

@@ -29,4 +29,5 @@ tracing-subscriber = { version = "0.3" }
 rand = "0.8.5"
 rayon = "1.10"
 uuid = { version = "1.10", features = ["rng", "serde", "v4"] }
+candle-nn = "0.7.0"
 [dev-dependencies]

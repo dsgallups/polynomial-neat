@@ -352,7 +352,7 @@ impl NetworkTopology {
     }
 
     //#[instrument(name = "my_span")]
-    pub fn to_network(&self) -> Network {
+    pub fn to_simple_network(&self) -> SimpleNetwork {
         let mut neurons: Vec<Arc<RwLock<Neuron>>> = Vec::with_capacity(self.neurons.len());
         let mut input_layer: Vec<Arc<RwLock<Neuron>>> = Vec::new();
         let mut output_layer: Vec<Arc<RwLock<Neuron>>> = Vec::new();
@@ -370,6 +370,6 @@ impl NetworkTopology {
             }
         }
 
-        Network::from_raw_parts(neurons, input_layer, output_layer)
+        SimpleNetwork::from_raw_parts(neurons, input_layer, output_layer)
     }
 }

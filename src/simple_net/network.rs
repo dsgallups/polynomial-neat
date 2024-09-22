@@ -6,7 +6,7 @@ use rayon::iter::{
 
 use crate::prelude::*;
 
-pub struct Network {
+pub struct SimpleNetwork {
     // contains all neurons
     neurons: Vec<Arc<RwLock<Neuron>>>,
     // contains the input neurons. cloned arc of neurons in neurons
@@ -15,7 +15,7 @@ pub struct Network {
     output_layer: Vec<Arc<RwLock<Neuron>>>,
 }
 
-impl Network {
+impl SimpleNetwork {
     /// Flushes the previous state of the network and calculates given new inputs.
     pub fn predict(&self, inputs: &[f32]) -> impl Iterator<Item = f32> {
         // reset all states first

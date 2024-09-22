@@ -12,7 +12,7 @@ fn main() {
         NetworkTopology::new(2, 2, mutation_chances, &mut rand::thread_rng());
 
     #[allow(unused_assignments)]
-    let mut running_network = running_topology.to_network();
+    let mut running_network = running_topology.to_simple_network();
 
     let mut gen = 0;
     loop {
@@ -27,7 +27,7 @@ fn main() {
 
         //fs::write(format!("./outputs/org_{}.dbg", gen), debug_info).unwrap();
 
-        running_network = running_topology.to_network();
+        running_network = running_topology.to_simple_network();
         let result = running_network.predict(&[1., 5.]).collect::<Vec<f32>>();
 
         info!(
