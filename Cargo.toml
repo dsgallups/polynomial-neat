@@ -22,10 +22,11 @@ edition = "2021"
 debug = []
 
 [dependencies]
+candle-core = { version = "0.7.0", features = ["metal"] }
+
 tracing = { version = "0.1", features = ["attributes"] }
 tracing-subscriber = { version = "0.3" }
 rand = "0.8.5"
 rayon = "1.10"
 uuid = { version = "1.10", features = ["rng", "serde", "v4"] }
-
 [dev-dependencies]

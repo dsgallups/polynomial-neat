@@ -1,6 +1,6 @@
 use std::sync::{Arc, RwLock};
 
-use super::Neuron;
+use crate::prelude::*;
 
 /// Defines a weight and reference to an input [`Neuron`].
 ///
