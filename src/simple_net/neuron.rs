@@ -2,24 +2,26 @@ use crate::prelude::*;
 use rayon::prelude::*;
 use uuid::Uuid;
 
+use super::neuron_type::NeuronType;
+
 pub struct Neuron {
     id: Uuid,
-    neuron_type: NeuronType,
+    props: Option<NeuronProps>,
     /// some working value, returned by the result of the activation value.
     activated_value: Option<f32>,
 }
 
 impl Neuron {
-    pub fn new(id: Uuid, neuron_type: NeuronType) -> Self {
+    pub fn new(id: Uuid, props: Option<NeuronProps>) -> Self {
         Self {
             id,
-            neuron_type,
+            props,
             activated_value: None,
         }
     }
 
     pub fn inputs(&self) -> Option<&[NeuronInput]> {
-        self.neuron_type.inputs()
+        self.props.as_ref().map(|props| props.inputs())
     }
 
     pub fn id(&self) -> Uuid {
@@ -34,28 +36,29 @@ impl Neuron {
         self.activated_value
     }
 
-    pub fn neuron_type(&self) -> &NeuronType {
-        &self.neuron_type
-    }
-
-    pub fn activation(&self) -> Option<&(dyn Fn(f32) -> f32 + Send + Sync)> {
-        self.neuron_type.activation()
+    pub fn neuron_type(&self) -> NeuronType {
+        match self.props {
+            None => NeuronType::input(),
+            Some(ref props) => props.props_type().into(),
+        }
     }
 
     pub fn is_input(&self) -> bool {
-        matches!(self.neuron_type, NeuronType::Input)
+        self.neuron_type() == NeuronType::input()
     }
-
     pub fn is_hidden(&self) -> bool {
-        matches!(self.neuron_type, NeuronType::Hidden { .. })
+        self.neuron_type() == NeuronType::hidden()
+    }
+    pub fn is_output(&self) -> bool {
+        self.neuron_type() == NeuronType::output()
     }
 
-    pub fn is_output(&self) -> bool {
-        matches!(self.neuron_type, NeuronType::Output { .. })
+    pub fn activation(&self) -> Option<&(dyn Fn(f32) -> f32 + Send + Sync)> {
+        self.props.as_ref().map(|p| p.activation())
     }
 
     pub fn bias(&self) -> Option<f32> {
-        self.neuron_type.bias()
+        self.props.as_ref().map(|p| p.bias())
     }
 
     pub fn activate(&mut self) -> f32 {
@@ -71,7 +74,6 @@ impl Neuron {
         };
 
         let working_value = self
-            .neuron_type()
             .inputs()
             .unwrap()
             .par_iter()

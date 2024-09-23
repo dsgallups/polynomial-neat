@@ -4,7 +4,7 @@ pub mod topology;
 
 pub mod prelude {
     pub use super::simple_net::{
-        input::NeuronInput, network::SimpleNetwork, neuron::Neuron, neuron_type::NeuronType,
+        input::NeuronInput, network::SimpleNetwork, neuron::Neuron, neuron_type::NeuronProps,
     };
     pub use super::topology::{
         activation::{Activation, Bias},

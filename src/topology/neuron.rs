@@ -125,20 +125,20 @@ impl NeuronTopology {
             }
 
             if self.is_hidden() {
-                NeuronType::Hidden {
+                NeuronProps::Hidden {
                     inputs: new_inputs,
                     activation: self.activation().unwrap().as_fn(),
                     bias: self.bias().unwrap(),
                 }
             } else {
-                NeuronType::Output {
+                NeuronProps::Output {
                     inputs: new_inputs,
                     activation: self.activation().unwrap().as_fn(),
                     bias: self.bias().unwrap(),
                 }
             }
         } else {
-            NeuronType::Input
+            NeuronProps::Input
         };
 
         let neuron = Neuron::new(self.id, neuron_type);
