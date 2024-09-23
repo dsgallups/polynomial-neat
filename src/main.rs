@@ -40,5 +40,22 @@ fn main() {
             gen,
         );
         gen += 1;
+        if gen > 1000 {
+            break;
+        }
+    }
+
+    loop {
+        info!("looping final network");
+
+        let result = running_network.predict(&[1., 5.]).collect::<Vec<f32>>();
+        info!(
+            "\nresult: {:?}, network_len: ({}, {}, {})\n===END GEN ({}) ===",
+            result,
+            running_network.num_nodes(),
+            running_network.num_inputs(),
+            running_network.num_outputs(),
+            gen,
+        );
     }
 }
