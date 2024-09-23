@@ -6,7 +6,7 @@ fn main() {
         .init();
 
     tracing::info!("test");
-    let mutation_chances = MutationChances::new_from_raw(3, 80., 50., 5., 60., 20., 10.);
+    let mutation_chances = MutationChances::new_from_raw(3, 80., 50., 5., 60., 20.);
 
     let mut running_topology =
         NetworkTopology::new(2, 2, mutation_chances, &mut rand::thread_rng());

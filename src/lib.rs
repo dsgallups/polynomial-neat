@@ -7,7 +7,7 @@ pub mod prelude {
         input::NeuronInput, network::SimpleNetwork, neuron::Neuron, neuron_type::NeuronProps,
     };
     pub use super::topology::{
-        activation::{Activation, Bias},
+        activation::{Bias, Exponent},
         input::InputTopology,
         mutation::{MutationAction, MutationChances, MAX_MUTATIONS},
         network::NetworkTopology,

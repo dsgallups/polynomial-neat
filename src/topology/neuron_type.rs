@@ -6,25 +6,19 @@ use crate::{prelude::*, simple_net::neuron_type::PropsType};
 pub struct NeuronPropsTopology {
     props_type: PropsType,
     inputs: Vec<InputTopology>,
-    activation: Activation,
-    bias: f32,
 }
 
 impl NeuronPropsTopology {
-    pub fn hidden(inputs: Vec<InputTopology>, activation: Activation, bias: f32) -> Self {
+    pub fn hidden(inputs: Vec<InputTopology>) -> Self {
         Self {
             props_type: PropsType::Hidden,
             inputs,
-            activation,
-            bias,
         }
     }
-    pub fn output(inputs: Vec<InputTopology>, activation: Activation, bias: f32) -> Self {
+    pub fn output(inputs: Vec<InputTopology>) -> Self {
         Self {
             props_type: PropsType::Output,
             inputs,
-            activation,
-            bias,
         }
     }
 
@@ -37,8 +31,6 @@ impl NeuronPropsTopology {
         Self {
             props_type: self.props_type,
             inputs: Vec::with_capacity(self.inputs.len()),
-            activation: self.activation,
-            bias: self.bias,
         }
     }
 
@@ -74,18 +66,6 @@ impl NeuronPropsTopology {
         }
         let len = self.inputs.len();
         self.inputs.get_mut(rng.gen_range(0..len))
-    }
-    pub fn activation(&self) -> Activation {
-        self.activation
-    }
-    pub fn activation_mut(&mut self) -> &mut Activation {
-        &mut self.activation
-    }
-    pub fn bias(&self) -> f32 {
-        self.bias
-    }
-    pub fn bias_mut(&mut self) -> &mut f32 {
-        &mut self.bias
     }
 
     pub fn num_inputs(&self) -> usize {

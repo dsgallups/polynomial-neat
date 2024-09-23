@@ -53,14 +53,6 @@ impl Neuron {
         self.neuron_type() == NeuronType::output()
     }
 
-    pub fn activation(&self) -> Option<&(dyn Fn(f32) -> f32 + Send + Sync)> {
-        self.props.as_ref().map(|p| p.activation())
-    }
-
-    pub fn bias(&self) -> Option<f32> {
-        self.props.as_ref().map(|p| p.bias())
-    }
-
     pub fn activate(&mut self) -> f32 {
         if let Some(val) = self.check_activated() {
             return val;
@@ -73,7 +65,7 @@ impl Neuron {
             return 0.;
         };
 
-        let working_value = self
+        let result = self
             .inputs()
             .unwrap()
             .par_iter()
@@ -89,9 +81,7 @@ impl Neuron {
                 }
                 input.get_input_value()
             })
-            .sum::<f32>()
-            + self.bias().unwrap();
-        let result = (self.activation().unwrap())(working_value);
+            .sum::<f32>();
 
         self.activated_value = Some(result);
 

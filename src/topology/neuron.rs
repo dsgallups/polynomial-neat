@@ -1,6 +1,5 @@
 use std::sync::{Arc, RwLock};
 
-use rand::Rng;
 use uuid::Uuid;
 
 use crate::{prelude::*, simple_net::neuron_type::NeuronType};
@@ -12,21 +11,28 @@ pub struct NeuronTopology {
 }
 
 impl NeuronTopology {
-    pub fn input(id: Uuid) -> Arc<RwLock<Self>> {
-        Arc::new(RwLock::new(Self {
+    pub fn input(id: Uuid) -> Self {
+        Self {
             id,
             neuron_props: None,
-        }))
+        }
+    }
+    pub fn hidden(id: Uuid, inputs: Vec<InputTopology>) -> Self {
+        let neuron_type = NeuronPropsTopology::hidden(inputs);
+        Self::new(id, Some(neuron_type))
     }
 
-    pub fn output_rand(inputs: Vec<InputTopology>, rng: &mut impl Rng) -> Arc<RwLock<Self>> {
-        let neuron_props =
-            NeuronPropsTopology::output(inputs, Activation::rand(rng), Bias::rand(rng));
+    pub fn output(id: Uuid, inputs: Vec<InputTopology>) -> Self {
+        let neuron_props = NeuronPropsTopology::output(inputs);
 
-        Self::new(Uuid::new_v4(), Some(neuron_props))
+        Self::new(id, Some(neuron_props))
     }
 
-    pub fn new(id: Uuid, neuron_props: Option<NeuronPropsTopology>) -> Arc<RwLock<Self>> {
+    pub fn new(id: Uuid, neuron_props: Option<NeuronPropsTopology>) -> Self {
+        Self { id, neuron_props }
+    }
+
+    pub fn new_arc(id: Uuid, neuron_props: Option<NeuronPropsTopology>) -> Arc<RwLock<Self>> {
         Arc::new(RwLock::new(Self { id, neuron_props }))
     }
 
@@ -43,13 +49,6 @@ impl NeuronTopology {
             id: Uuid::new_v4(),
             neuron_props: self.neuron_props.as_ref().map(|props| props.deep_clone()),
         }
-    }
-
-    pub fn hidden_rand(inputs: Vec<InputTopology>, rng: &mut impl Rng) -> Arc<RwLock<Self>> {
-        let id = Uuid::new_v4();
-        let neuron_type =
-            NeuronPropsTopology::hidden(inputs, Activation::rand(rng), Bias::rand(rng));
-        Self::new(id, Some(neuron_type))
     }
 
     pub fn id(&self) -> Uuid {
@@ -93,16 +92,11 @@ impl NeuronTopology {
                 for input in props.inputs() {
                     if let Some(input_neuron) = input.neuron() {
                         let neuron = input_neuron.read().unwrap().to_neuron(neurons);
-                        new_inputs.push(NeuronInput::new(neuron, input.weight()));
+                        new_inputs.push(NeuronInput::new(neuron, input.weight(), input.exponent()));
                     }
                 }
 
-                Some(NeuronProps::new(
-                    props.props_type(),
-                    new_inputs,
-                    props.activation().as_fn(),
-                    props.bias(),
-                ))
+                Some(NeuronProps::new(props.props_type(), new_inputs))
             }
             None => None,
         };
