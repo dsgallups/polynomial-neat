@@ -30,15 +30,18 @@ impl NeuronInput {
             return self.weight;
         }
 
+        info!("--{}({}) CHECK", caller, idx);
         let cached = {
-            let val = self.neuron().read().unwrap().check_activated();
-            if let Some(val) = val {
-                Some(val.powi(self.exp) * self.weight)
-            } else {
-                None
-            }
+            let val = self
+                .neuron()
+                .read()
+                .unwrap()
+                .check_activated()
+                .map(|val| val.powi(self.exp) * self.weight);
+
+            val
         };
-        info!("Getting input value for {}({})", caller, idx);
+
         if let Some(cached) = cached {
             info!("--{}({}) Cached and returning", caller, idx);
             cached.powi(self.exp) * self.weight
@@ -57,7 +60,6 @@ impl NeuronInput {
                 );
             }
             let neuron_value = self.neuron.write().unwrap().activate();
-            info!("--{}({}) now holds write lock", caller, idx);
             neuron_value.powi(self.exp) * self.weight
         }
     }

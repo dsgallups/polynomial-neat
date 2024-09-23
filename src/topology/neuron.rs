@@ -91,27 +91,11 @@ impl NeuronTopology {
 
                 for topology_input in topology_props.inputs() {
                     if let Some(topology_input_neuron) = topology_input.neuron() {
-                        println!(
-                            "({}) finding pos for {}",
-                            self.id_short(),
-                            topology_input_neuron.read().unwrap().id_short()
-                        );
                         topology_input_neuron.read().unwrap().to_neuron(neurons);
-                        let (_, neuron_in_array) = neurons
+                        let neuron_in_array = neurons
                             .iter()
-                            .enumerate()
-                            .find(|(idx, n)| {
-                                let n_id = n.read().unwrap();
-                                let in_id = topology_input_neuron.read().unwrap();
-                                let res = n_id.id() == in_id.id();
-
-                                println!(
-                                    "pos({}) ({}, {})",
-                                    idx,
-                                    n_id.id_short(),
-                                    in_id.id_short()
-                                );
-                                res
+                            .find(|n| {
+                                n.read().unwrap().id() == topology_input_neuron.read().unwrap().id()
                             })
                             .unwrap();
 

@@ -68,9 +68,9 @@ impl Neuron {
             info!("{} al_act: {}", self.id_short(), val);
             return val;
         }
-        info!("{} calc", self.id_short());
+        info!("-----{} calc", self.id_short());
         let res = self.calculate_activation();
-        info!("{} re_act: {}", self.id_short(), res);
+        info!("-----{} re_act: {}", self.id_short(), res);
         res
     }
 
@@ -79,42 +79,39 @@ impl Neuron {
             return 0.;
         };
 
-        for (i, neuron_2) in self.inputs().unwrap().iter().enumerate() {
-            let neuron_2 = neuron_2.neuron();
-            match neuron_2.try_write() {
-                Ok(neuron_2) => {
-                    info!(
-                        "--with lock({}), {}({:?}) not blocked",
-                        self.id_short(),
-                        i,
-                        neuron_2.id_short()
-                    )
-                }
-                Err(e) => {
-                    let neuron_2_read = neuron_2.try_read().ok().map(|n2| n2.id_short());
-                    info!(
-                        "--with lock({}), {}({:?}) blocked: {:?}",
-                        self.id_short(),
-                        i,
-                        neuron_2_read,
-                        e
-                    )
-                }
-            }
-        }
+        let num_inputs = self.inputs().unwrap().len();
 
+        /*
+        You may be wondering why this isn't a parallel iterator.
+        I have found that if all rayon's threads are blocked,
+        then this, even though the "summing" would unblock the rest
+        of the threads, cannot complete.
+        */
         let result = self
             .inputs()
             .unwrap()
-            .iter()
+            .par_iter()
             .enumerate()
-            .map(|(i, input)| {
-                info!("{} request_ {}", self.id_short(), i);
-                let res = input.get_input_value(self.id_short(), i);
-                info!("{} received {} ({})", self.id_short(), i, res);
+            .map(|(idx, input)| {
+                info!(
+                    "{} REQUEST INPUT ({}/{})",
+                    self.id_short(),
+                    idx,
+                    num_inputs - 1
+                );
+                let res = input.get_input_value(self.id_short(), idx);
+                info!(
+                    "{} RECEIVED INPUT ({}/{}) ({})",
+                    self.id_short(),
+                    idx,
+                    num_inputs - 1,
+                    res
+                );
                 res
             })
             .sum::<f32>();
+
+        info!("{} RETURNING RESULT FROM INPUTS", self.id_short());
 
         self.activated_value = Some(result);
 
