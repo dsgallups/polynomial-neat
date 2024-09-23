@@ -28,6 +28,7 @@ fn main() {
         //fs::write(format!("./outputs/org_{}.dbg", gen), debug_info).unwrap();
 
         running_network = running_topology.to_simple_network();
+        info!("simple network made");
         let result = running_network.predict(&[1., 5.]).collect::<Vec<f32>>();
 
         info!(

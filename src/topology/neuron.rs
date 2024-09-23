@@ -56,6 +56,11 @@ impl NeuronTopology {
         self.id
     }
 
+    pub fn id_short(&self) -> String {
+        let str = self.id.to_string();
+        str[0..6].to_string()
+    }
+
     pub fn neuron_type(&self) -> NeuronType {
         match self.neuron_props {
             None => NeuronType::input(),

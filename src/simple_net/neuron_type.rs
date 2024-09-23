@@ -1,9 +1,21 @@
+use core::fmt;
+
 use crate::prelude::*;
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum NeuronType {
     Input,
     Props(PropsType),
+}
+
+impl fmt::Display for NeuronType {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Self::Input => write!(f, "Input"),
+            Self::Props(PropsType::Hidden) => write!(f, "Hidden"),
+            Self::Props(PropsType::Output) => write!(f, "Output"),
+        }
+    }
 }
 
 impl NeuronType {

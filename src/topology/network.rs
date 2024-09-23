@@ -4,9 +4,10 @@ use std::{
 };
 
 use rand::Rng;
+use tracing::info;
 use uuid::Uuid;
 
-use crate::prelude::*;
+use crate::{prelude::*, simple_net::neuron};
 
 use super::mutation::MutationChances;
 
@@ -197,7 +198,54 @@ impl NetworkTopology {
 
         child.remove_cycles();
 
+        println!(
+            "\nparent: {}\nchild: {}",
+            self.debug_str(),
+            child.debug_str()
+        );
+
         child
+    }
+
+    pub fn debug_str(&self) -> String {
+        let mut str = String::new();
+        for neuron in self.neurons.iter() {
+            let neuron = neuron.read().unwrap();
+            str.push_str(&format!(
+                "\n({}[{}]: ",
+                neuron.id_short(),
+                neuron.neuron_type()
+            ));
+            match neuron.props() {
+                Some(props) => {
+                    str.push('[');
+                    for input in props.inputs() {
+                        match input.neuron() {
+                            Some(n) => {
+                                let n = n.read().unwrap();
+
+                                let loc = self
+                                    .neurons
+                                    .iter()
+                                    .position(|neuron| neuron.read().unwrap().id() == n.id())
+                                    .unwrap();
+
+                                str.push_str(&format!("({})", loc));
+                            }
+                            None => str.push_str("(DROPPED)"),
+                        }
+                    }
+                    str.push(']')
+                }
+
+                None => {
+                    str.push_str("N/A");
+                }
+            }
+
+            str.push(')');
+        }
+        str
     }
 
     pub fn mutate(&mut self, actions: &[MutationAction], rng: &mut impl Rng) {
@@ -337,6 +385,7 @@ impl NetworkTopology {
                 None => vec![],
             }
         }
+        let mut num_removed = 0;
         loop {
             let mut remove_queue = Vec::new();
 
@@ -357,18 +406,22 @@ impl NetworkTopology {
             if remove_queue.is_empty() {
                 break;
             }
-            for neuron in self.neurons.iter() {
-                let id = neuron.read().unwrap().id();
-
-                if let Some(remove) = remove_queue.iter().find(|r| r.remove_from == id) {
-                    let mut neuron = neuron.write().unwrap();
-                    let Some(props) = neuron.props_mut() else {
-                        panic!("tried to remove inputs from an input node!");
-                    };
-                    props.trim_inputs(remove.indices.as_slice());
-                }
+            for removal in remove_queue {
+                let neuron_to_trim = self
+                    .neurons
+                    .iter_mut()
+                    .find(|neuron| neuron.read().unwrap().id() == removal.remove_from)
+                    .unwrap();
+                let mut neuron = neuron_to_trim.write().unwrap();
+                let Some(props) = neuron.props_mut() else {
+                    panic!("tried to remove inputs from an input node!");
+                };
+                props.trim_inputs(removal.indices.as_slice());
+                num_removed += 1;
             }
         }
+
+        info!("Num removed: {}", num_removed);
         /*
         neuron.write().unwrap().trim_inputs(to_remove);*/
     }
@@ -382,7 +435,6 @@ impl NetworkTopology {
         for neuron_replicant in self.neurons.iter() {
             let neuron = neuron_replicant.read().unwrap();
             let neuron = neuron.to_neuron(&mut neurons);
-            neurons.push(Arc::clone(&neuron));
             let neuron_read = neuron.read().unwrap();
             if neuron_read.is_input() {
                 input_layer.push(Arc::clone(&neuron));
@@ -391,6 +443,14 @@ impl NetworkTopology {
                 output_layer.push(Arc::clone(&neuron));
             }
         }
+
+        info!(
+            "self neurons: {}, ({}, {}, {})",
+            self.neurons.len(),
+            neurons.len(),
+            input_layer.len(),
+            output_layer.len()
+        );
 
         SimpleNetwork::from_raw_parts(neurons, input_layer, output_layer)
     }
