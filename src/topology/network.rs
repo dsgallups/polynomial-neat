@@ -218,10 +218,11 @@ impl NetworkTopology {
 
     pub fn debug_str(&self) -> String {
         let mut str = String::new();
-        for neuron in self.neurons.iter() {
+        for (neuron_index, neuron) in self.neurons.iter().enumerate() {
             let neuron = neuron.read().unwrap();
             str.push_str(&format!(
-                "\n({}[{}]: ",
+                "\n(({}) {}[{}]: ",
+                neuron_index,
                 neuron.id_short(),
                 neuron.neuron_type()
             ));
@@ -447,19 +448,25 @@ impl NetworkTopology {
 
         for neuron_replicant in self.neurons.iter() {
             let neuron = neuron_replicant.read().unwrap();
-            let neuron = neuron.to_neuron(&mut neurons);
+
+            neuron.to_neuron(&mut neurons);
+            let neuron = neurons
+                .iter()
+                .find(|n| n.read().unwrap().id() == neuron.id())
+                .unwrap();
+
             let neuron_read = neuron.read().unwrap();
+
             if neuron_read.is_input() {
-                input_layer.push(Arc::clone(&neuron));
+                input_layer.push(Arc::clone(neuron));
             }
             if neuron_read.is_output() {
-                output_layer.push(Arc::clone(&neuron));
+                output_layer.push(Arc::clone(neuron));
             }
         }
 
         info!(
-            "self neurons: {}, ({}, {}, {})",
-            self.neurons.len(),
+            "Network final: ({}, {}, {})",
             neurons.len(),
             input_layer.len(),
             output_layer.len()

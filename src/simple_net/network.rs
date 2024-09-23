@@ -3,6 +3,7 @@ use std::sync::{Arc, RwLock};
 use rayon::iter::{
     IndexedParallelIterator as _, IntoParallelRefIterator as _, ParallelIterator as _,
 };
+use tracing::{error, info};
 
 use crate::prelude::*;
 
@@ -18,35 +19,95 @@ pub struct SimpleNetwork {
 impl SimpleNetwork {
     /// Flushes the previous state of the network and calculates given new inputs.
     pub fn predict(&self, inputs: &[f32]) -> impl Iterator<Item = f32> {
+        println!("{}", self.debug_str());
         // reset all states first
-        self.neurons.par_iter().for_each(|neuron| {
+        self.neurons.iter().enumerate().for_each(|(i, neuron)| {
+            info!("ROOT WRITEFLUSH({})", i);
             let mut neuron = neuron.write().unwrap();
             neuron.flush_state();
+            /*if neuron.is_input() {
+                neuron.override_state(inputs[input_i]);
+                input_i += 1;
+            }*/
+
+            info!("ROOT DROPFLUSH({}, {})", i, neuron.id_short());
+            drop(neuron);
         });
-        inputs.par_iter().enumerate().for_each(|(index, value)| {
+        /*inputs.iter().enumerate().for_each(|(index, value)| {
+            info!("ROOT WRITEINPUT({})", index);
             let Some(nw) = self.input_layer.get(index) else {
-                return;
+                panic!("couldn't flush i {}", index);
             };
             let mut nw = nw.write().unwrap();
             nw.override_state(*value);
-        });
 
-        let outputs = self
-            .output_layer
-            .par_iter()
-            .fold(Vec::new, |mut values, neuron| {
-                let mut neuron = neuron.write().unwrap();
+            info!(
+                "ROOT DROPWRITEINPUT({}, {}, value = {})",
+                index,
+                nw.id_short(),
+                value
+            );
+            drop(nw);
+        });*/
 
-                values.push(neuron.activate());
+        info!("Now iterating through outputs!");
+        for (i, neuron) in self.neurons.iter().enumerate() {
+            match neuron.try_write() {
+                Ok(_) => info!("{} not blocked", i),
+                Err(e) => info!("{} blocked: {:?}", i, e),
+            }
+        }
 
-                values
-            })
-            .collect_vec_list();
+        let outputs =
+            self.output_layer
+                .iter()
+                .enumerate()
+                .fold(Vec::new(), |mut values, (index, neuron)| {
+                    let result = {
+                        info!("ROOT WRITEOUTPUT({})", index);
+                        let mut neuron = neuron.write().unwrap();
+                        info!("ROOT WRITEOUTPUT({}, {}, locked)", index, neuron.id_short());
+                        for (i, neuron_2) in self.neurons.iter().enumerate() {
+                            match neuron_2.try_write() {
+                                Ok(neuron_2) => {
+                                    info!(
+                                        "with lock({}), {}({:?}) not blocked",
+                                        neuron.id_short(),
+                                        i,
+                                        neuron_2.id_short()
+                                    )
+                                }
+                                Err(e) => {
+                                    let neuron_2_read =
+                                        neuron_2.try_read().ok().map(|n2| n2.id_short());
+                                    info!(
+                                        "with lock({}), {}({:?}) blocked: {:?}",
+                                        neuron.id_short(),
+                                        i,
+                                        neuron_2_read,
+                                        e
+                                    )
+                                }
+                            }
+                        }
+                        let result = neuron.activate();
+                        info!(
+                            "ROOT WRITEDROPOUTPUT({}, {}, output calculated)",
+                            index,
+                            neuron.id_short()
+                        );
+                        result
+                    };
 
-        outputs
-            .into_iter()
-            .flat_map(|outer_vec| outer_vec.into_iter())
-            .flat_map(|inner_vec| inner_vec.into_iter())
+                    values.push(result);
+
+                    values
+                });
+        //.collect_vec_list();
+
+        outputs.into_iter()
+        //.flat_map(|outer_vec| outer_vec.into_iter())
+        //.flat_map(|inner_vec| inner_vec.into_iter())
     }
 
     pub fn from_raw_parts(
@@ -78,5 +139,113 @@ impl SimpleNetwork {
     }
     pub fn num_outputs(&self) -> usize {
         self.output_layer.len()
+    }
+
+    pub fn debug_str(&self) -> String {
+        let mut str = "neurons: \n".to_string();
+        for (neuron_index, neuron) in self.neurons.iter().enumerate() {
+            let neuron = neuron.read().unwrap();
+            str.push_str(&format!(
+                "\n(({}) {}[{}]: ",
+                neuron_index,
+                neuron.id_short(),
+                neuron.neuron_type()
+            ));
+            match neuron.props() {
+                Some(props) => {
+                    str.push('[');
+                    for input in props.inputs() {
+                        let n = input.neuron().read().unwrap();
+
+                        let loc = self
+                            .neurons
+                            .iter()
+                            .position(|neuron| neuron.read().unwrap().id() == n.id())
+                            .unwrap();
+
+                        str.push_str(&format!("({})", loc));
+                    }
+                    str.push(']')
+                }
+
+                None => {
+                    str.push_str("N/A");
+                }
+            }
+
+            str.push(')');
+        }
+
+        str.push_str("\n\ninput_layer:");
+
+        for (neuron_index, neuron) in self.input_layer.iter().enumerate() {
+            let neuron = neuron.read().unwrap();
+            str.push_str(&format!(
+                "\n(({}) {}[{}]: ",
+                neuron_index,
+                neuron.id_short(),
+                neuron.neuron_type()
+            ));
+            match neuron.props() {
+                Some(props) => {
+                    str.push('[');
+                    for input in props.inputs() {
+                        let n = input.neuron().read().unwrap();
+
+                        let loc = self
+                            .neurons
+                            .iter()
+                            .position(|neuron| neuron.read().unwrap().id() == n.id())
+                            .unwrap();
+
+                        str.push_str(&format!("({})", loc));
+                    }
+                    str.push(']')
+                }
+
+                None => {
+                    str.push_str("N/A");
+                }
+            }
+
+            str.push(')');
+        }
+
+        str.push_str("\n\noutput layer:");
+
+        for (neuron_index, neuron) in self.output_layer.iter().enumerate() {
+            let neuron = neuron.read().unwrap();
+            str.push_str(&format!(
+                "\n(({}) {}[{}]: ",
+                neuron_index,
+                neuron.id_short(),
+                neuron.neuron_type()
+            ));
+            match neuron.props() {
+                Some(props) => {
+                    str.push('[');
+                    for input in props.inputs() {
+                        let n = input.neuron().read().unwrap();
+
+                        let loc = self
+                            .neurons
+                            .iter()
+                            .position(|neuron| neuron.read().unwrap().id() == n.id())
+                            .unwrap();
+
+                        str.push_str(&format!("({})", loc));
+                    }
+                    str.push(']')
+                }
+
+                None => {
+                    str.push_str("N/A");
+                }
+            }
+
+            str.push(')');
+        }
+
+        str
     }
 }

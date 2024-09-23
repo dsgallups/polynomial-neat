@@ -78,32 +78,60 @@ impl NeuronTopology {
         self.neuron_type() == NeuronType::input()
     }
 
-    pub fn to_neuron(&self, neurons: &mut Vec<Arc<RwLock<Neuron>>>) -> Arc<RwLock<Neuron>> {
+    pub fn to_neuron(&self, neurons: &mut Vec<Arc<RwLock<Neuron>>>) {
         for neuron in neurons.iter() {
             if neuron.read().unwrap().id() == self.id() {
-                return Arc::clone(neuron);
+                return;
             }
         }
 
-        let neuron_props = match self.props() {
-            Some(props) => {
-                let mut new_inputs = Vec::with_capacity(props.inputs().len());
+        let new_neuron_props = match self.props() {
+            Some(topology_props) => {
+                let mut new_neuron_inputs = Vec::with_capacity(topology_props.inputs().len());
 
-                for input in props.inputs() {
-                    if let Some(input_neuron) = input.neuron() {
-                        let neuron = input_neuron.read().unwrap().to_neuron(neurons);
-                        new_inputs.push(NeuronInput::new(neuron, input.weight(), input.exponent()));
+                for topology_input in topology_props.inputs() {
+                    if let Some(topology_input_neuron) = topology_input.neuron() {
+                        println!(
+                            "({}) finding pos for {}",
+                            self.id_short(),
+                            topology_input_neuron.read().unwrap().id_short()
+                        );
+                        topology_input_neuron.read().unwrap().to_neuron(neurons);
+                        let (_, neuron_in_array) = neurons
+                            .iter()
+                            .enumerate()
+                            .find(|(idx, n)| {
+                                let n_id = n.read().unwrap();
+                                let in_id = topology_input_neuron.read().unwrap();
+                                let res = n_id.id() == in_id.id();
+
+                                println!(
+                                    "pos({}) ({}, {})",
+                                    idx,
+                                    n_id.id_short(),
+                                    in_id.id_short()
+                                );
+                                res
+                            })
+                            .unwrap();
+
+                        new_neuron_inputs.push(NeuronInput::new(
+                            Arc::clone(neuron_in_array),
+                            topology_input.weight(),
+                            topology_input.exponent(),
+                        ));
                     }
                 }
 
-                Some(NeuronProps::new(props.props_type(), new_inputs))
+                Some(NeuronProps::new(
+                    topology_props.props_type(),
+                    new_neuron_inputs,
+                ))
             }
             None => None,
         };
 
-        let neuron = Arc::new(RwLock::new(Neuron::new(self.id, neuron_props)));
+        let neuron = Arc::new(RwLock::new(Neuron::new(self.id, new_neuron_props)));
         neurons.push(Arc::clone(&neuron));
-
-        neuron
     }
 }

@@ -1,5 +1,6 @@
 use crate::prelude::*;
 use rayon::prelude::*;
+use tracing::info;
 use uuid::Uuid;
 
 use super::neuron_type::NeuronType;
@@ -26,6 +27,15 @@ impl Neuron {
 
     pub fn id(&self) -> Uuid {
         self.id
+    }
+
+    pub fn props(&self) -> Option<&NeuronProps> {
+        self.props.as_ref()
+    }
+
+    pub fn id_short(&self) -> String {
+        let str = self.id.to_string();
+        str[0..6].to_string()
     }
 
     pub fn flush_state(&mut self) {
@@ -55,9 +65,13 @@ impl Neuron {
 
     pub fn activate(&mut self) -> f32 {
         if let Some(val) = self.check_activated() {
+            info!("{} al_act: {}", self.id_short(), val);
             return val;
         }
-        self.calculate_activation()
+        info!("{} calc", self.id_short());
+        let res = self.calculate_activation();
+        info!("{} re_act: {}", self.id_short(), res);
+        res
     }
 
     fn calculate_activation(&mut self) -> f32 {
@@ -65,21 +79,40 @@ impl Neuron {
             return 0.;
         };
 
+        for (i, neuron_2) in self.inputs().unwrap().iter().enumerate() {
+            let neuron_2 = neuron_2.neuron();
+            match neuron_2.try_write() {
+                Ok(neuron_2) => {
+                    info!(
+                        "--with lock({}), {}({:?}) not blocked",
+                        self.id_short(),
+                        i,
+                        neuron_2.id_short()
+                    )
+                }
+                Err(e) => {
+                    let neuron_2_read = neuron_2.try_read().ok().map(|n2| n2.id_short());
+                    info!(
+                        "--with lock({}), {}({:?}) blocked: {:?}",
+                        self.id_short(),
+                        i,
+                        neuron_2_read,
+                        e
+                    )
+                }
+            }
+        }
+
         let result = self
             .inputs()
             .unwrap()
-            .par_iter()
-            .map(|input| {
-                #[cfg(feature = "debug")]
-                {
-                    let input_neuron = input.neuron();
-
-                    let in_id = input_neuron.read().unwrap().id();
-                    if self.id() == in_id {
-                        panic!("Cyclic dependency!");
-                    }
-                }
-                input.get_input_value()
+            .iter()
+            .enumerate()
+            .map(|(i, input)| {
+                info!("{} request_ {}", self.id_short(), i);
+                let res = input.get_input_value(self.id_short(), i);
+                info!("{} received {} ({})", self.id_short(), i, res);
+                res
             })
             .sum::<f32>();
 

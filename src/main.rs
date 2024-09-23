@@ -1,4 +1,5 @@
 use candle_neat::{prelude::*, topology::mutation::MutationChances};
+use rayon::iter::{IntoParallelRefIterator, ParallelIterator};
 use tracing::info;
 fn main() {
     tracing_subscriber::fmt()
@@ -18,10 +19,6 @@ fn main() {
     loop {
         info!("===NEW GEN ({}) ===", gen);
         running_topology = running_topology.replicate(&mut rand::thread_rng());
-        info!(
-            "Mutation chances: \n{:#?}",
-            running_topology.mutation_chances()
-        );
 
         //let debug_info = format!("{:#?}", running_topology);
 
@@ -40,9 +37,9 @@ fn main() {
             gen,
         );
         gen += 1;
-        if gen > 1000 {
+        /*if gen > 1000 {
             break;
-        }
+        }*/
     }
 
     loop {
@@ -58,4 +55,10 @@ fn main() {
             gen,
         );
     }
+}
+
+#[test]
+fn test_something() {
+    let res = [].par_iter().sum::<f32>();
+    println!("res: {}", res)
 }
