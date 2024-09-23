@@ -12,7 +12,7 @@ pub mod prelude {
         mutation::{MutationAction, MutationChances, MAX_MUTATIONS},
         network::NetworkTopology,
         neuron::NeuronTopology,
-        neuron_type::NeuronTypeTopology,
+        neuron_type::NeuronPropsTopology,
     };
 }
 

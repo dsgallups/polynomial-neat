@@ -1,6 +1,6 @@
 use crate::prelude::*;
 
-#[derive(Clone, Copy, PartialEq, Eq)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum NeuronType {
     Input,
     Props(PropsType),
@@ -24,14 +24,14 @@ impl From<PropsType> for NeuronType {
     }
 }
 
-#[derive(Clone, Copy, PartialEq, Eq)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum PropsType {
     Hidden,
     Output,
 }
 
 pub struct NeuronProps {
-    neuron_type: PropsType,
+    props_type: PropsType,
     inputs: Vec<NeuronInput>,
     activation: Box<dyn Fn(f32) -> f32 + Send + Sync>,
     bias: f32,
@@ -40,33 +40,37 @@ pub struct NeuronProps {
 /// Needs distinction between Hidden and Output since it's a DAG
 
 impl NeuronProps {
-    pub fn hidden(
+    pub fn new(
+        props_type: PropsType,
         inputs: Vec<NeuronInput>,
         activation: Box<dyn Fn(f32) -> f32 + Send + Sync>,
         bias: f32,
     ) -> Self {
         Self {
-            neuron_type: PropsType::Hidden,
-            inputs,
-            activation,
-            bias,
-        }
-    }
-    pub fn output(
-        inputs: Vec<NeuronInput>,
-        activation: Box<dyn Fn(f32) -> f32 + Send + Sync>,
-        bias: f32,
-    ) -> Self {
-        Self {
-            neuron_type: PropsType::Output,
+            props_type,
             inputs,
             activation,
             bias,
         }
     }
 
+    pub fn hidden(
+        inputs: Vec<NeuronInput>,
+        activation: Box<dyn Fn(f32) -> f32 + Send + Sync>,
+        bias: f32,
+    ) -> Self {
+        Self::new(PropsType::Hidden, inputs, activation, bias)
+    }
+    pub fn output(
+        inputs: Vec<NeuronInput>,
+        activation: Box<dyn Fn(f32) -> f32 + Send + Sync>,
+        bias: f32,
+    ) -> Self {
+        Self::new(PropsType::Output, inputs, activation, bias)
+    }
+
     pub fn props_type(&self) -> PropsType {
-        self.neuron_type
+        self.props_type
     }
 
     pub fn inputs(&self) -> &[NeuronInput] {
