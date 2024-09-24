@@ -1,11 +1,17 @@
+use std::f32::consts::E;
+
 use crate::{candle_net::expander::Polynomial, prelude::*};
 use candle_core::Tensor;
+
+#[derive(Debug)]
 pub struct CandleNetwork {
-    pub tensor: Tensor,
+    neurons: Vec<Polynomial>,
 }
 
 impl CandleNetwork {
     pub fn from_topology(topology: &NetworkTopology) -> Self {
+        let mut neurons = Vec::with_capacity(topology.neurons().len());
+
         for output in topology.neurons().iter().filter_map(|neuron| {
             let neuron = neuron.read().unwrap();
             if neuron.is_output() {
@@ -16,16 +22,37 @@ impl CandleNetwork {
         }) {
             //let output_tensor =
 
-            let mut expander = Polynomial::default();
-
-            for input in output.props().unwrap().inputs() {
-                let exponent = input.exponent();
-                let weight = input.weight();
-
-                expander.handle_operation(weight, exponent);
-            }
+            let poly = create_polynomial(&output);
+            neurons.push(poly)
         }
 
-        todo!()
+        Self { neurons }
     }
+}
+
+fn create_polynomial(top: &NeuronTopology) -> Polynomial {
+    let Some(props) = top.props() else {
+        println!("input found");
+        //this is an input
+        return Polynomial::default();
+        //todoo
+    };
+
+    let mut running_polynomial = Polynomial::default();
+    for input in props.inputs() {
+        let Some(neuron) = input.neuron() else {
+            continue;
+        };
+        let Ok(neuron) = neuron.read() else {
+            panic!("can't read neuron")
+        };
+
+        let neuron_polynomial = create_polynomial(&neuron);
+
+        running_polynomial.expand(neuron_polynomial, input.weight(), input.exponent());
+    }
+
+    println!("poly: {:?}", running_polynomial);
+
+    running_polynomial
 }
