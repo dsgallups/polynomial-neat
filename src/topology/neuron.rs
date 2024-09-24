@@ -78,7 +78,7 @@ impl NeuronTopology {
         self.neuron_type() == NeuronType::input()
     }
 
-    pub fn to_neuron(&self, neurons: &mut Vec<Arc<RwLock<Neuron>>>) {
+    pub fn to_neuron(&self, neurons: &mut Vec<Arc<RwLock<SimpleNeuron>>>) {
         for neuron in neurons.iter() {
             if neuron.read().unwrap().id() == self.id() {
                 return;
@@ -115,7 +115,7 @@ impl NeuronTopology {
             None => None,
         };
 
-        let neuron = Arc::new(RwLock::new(Neuron::new(self.id, new_neuron_props)));
+        let neuron = Arc::new(RwLock::new(SimpleNeuron::new(self.id, new_neuron_props)));
         neurons.push(Arc::clone(&neuron));
     }
 }

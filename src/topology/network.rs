@@ -434,9 +434,9 @@ impl NetworkTopology {
 
     //#[instrument(name = "my_span")]
     pub fn to_simple_network(&self) -> SimpleNetwork {
-        let mut neurons: Vec<Arc<RwLock<Neuron>>> = Vec::with_capacity(self.neurons.len());
-        let mut input_layer: Vec<Arc<RwLock<Neuron>>> = Vec::new();
-        let mut output_layer: Vec<Arc<RwLock<Neuron>>> = Vec::new();
+        let mut neurons: Vec<Arc<RwLock<SimpleNeuron>>> = Vec::with_capacity(self.neurons.len());
+        let mut input_layer: Vec<Arc<RwLock<SimpleNeuron>>> = Vec::new();
+        let mut output_layer: Vec<Arc<RwLock<SimpleNeuron>>> = Vec::new();
 
         for neuron_replicant in self.neurons.iter() {
             let neuron = neuron_replicant.read().unwrap();

@@ -1,15 +1,17 @@
+use std::sync::{Arc, RwLock};
+
 use crate::prelude::*;
 use rayon::iter::{IndexedParallelIterator, IntoParallelRefIterator as _, ParallelIterator as _};
 use uuid::Uuid;
 
-pub struct Neuron {
+pub struct SimpleNeuron {
     id: Uuid,
-    props: Option<NeuronProps>,
+    props: Option<Props<Arc<RwLock<SimpleNeuron>>>>,
     /// some working value, returned by the result of the activation value.
     activated_value: Option<f32>,
 }
 
-impl Neuron {
+impl SimpleNeuron {
     pub fn new(id: Uuid, props: Option<NeuronProps>) -> Self {
         Self {
             id,

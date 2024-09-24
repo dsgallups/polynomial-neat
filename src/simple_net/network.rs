@@ -6,11 +6,11 @@ use crate::prelude::*;
 
 pub struct SimpleNetwork {
     // contains all neurons
-    neurons: Vec<Arc<RwLock<Neuron>>>,
+    neurons: Vec<Arc<RwLock<SimpleNeuron>>>,
     // contains the input neurons. cloned arc of neurons in neurons
-    input_layer: Vec<Arc<RwLock<Neuron>>>,
+    input_layer: Vec<Arc<RwLock<SimpleNeuron>>>,
     // contains the output neurons. cloned arc of neurons in neurons
-    output_layer: Vec<Arc<RwLock<Neuron>>>,
+    output_layer: Vec<Arc<RwLock<SimpleNeuron>>>,
 }
 
 impl SimpleNetwork {
@@ -48,9 +48,9 @@ impl SimpleNetwork {
     }
 
     pub fn from_raw_parts(
-        neurons: Vec<Arc<RwLock<Neuron>>>,
-        input_layer: Vec<Arc<RwLock<Neuron>>>,
-        output_layer: Vec<Arc<RwLock<Neuron>>>,
+        neurons: Vec<Arc<RwLock<SimpleNeuron>>>,
+        input_layer: Vec<Arc<RwLock<SimpleNeuron>>>,
+        output_layer: Vec<Arc<RwLock<SimpleNeuron>>>,
     ) -> Self {
         Self {
             neurons,

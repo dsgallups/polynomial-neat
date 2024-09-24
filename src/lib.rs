@@ -6,10 +6,11 @@ pub mod prelude {
     pub use super::core::{
         activation::{Bias, Exponent},
         input::Input,
+        neuron::NeuronInner,
         neuron_type::{NeuronType, Props, PropsType},
     };
     pub use super::simple_net::{
-        input::NeuronInput, network::SimpleNetwork, neuron::Neuron, neuron_type::NeuronProps,
+        input::NeuronInput, network::SimpleNetwork, neuron::SimpleNeuron, neuron_type::NeuronProps,
     };
     pub use super::topology::{
         input::InputTopology,

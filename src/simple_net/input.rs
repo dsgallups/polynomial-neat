@@ -2,7 +2,7 @@ use std::sync::{Arc, RwLock};
 
 use crate::prelude::*;
 
-pub type NeuronInput = Input<Arc<RwLock<Neuron>>>;
+pub type NeuronInput = Input<Arc<RwLock<SimpleNeuron>>>;
 
 impl NeuronInput {
     /// applies a weight and exponent to the input neuron and returns the result
