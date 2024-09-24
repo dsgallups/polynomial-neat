@@ -6,8 +6,9 @@ use std::sync::{Arc, RwLock};
 
 use crate::prelude::*;
 use candle_core::{Device, Result, Tensor};
+use network::CandleNetwork;
 use uuid::Uuid;
-
+mod expander;
 mod network;
 
 pub fn scratch() -> Result<()> {
@@ -40,6 +41,33 @@ pub fn scratch() -> Result<()> {
         vec![input, hidden_1, hidden_2, output],
         MutationChances::none(),
     );
+
+    let simple_network = SimpleNetwork::from_topology(&topology);
+    let candle_network = CandleNetwork::from_topology(&topology);
+
+    Ok(())
+}
+
+#[test]
+pub fn simple_network() -> Result<()> {
+    println!("hello");
+
+    let input = arc(NeuronTopology::input(Uuid::new_v4()));
+
+    let output = arc(NeuronTopology::output(
+        Uuid::new_v4(),
+        vec![
+            InputTopology::downgrade(&input, 1., 1),
+            InputTopology::downgrade(&input, 1., 1),
+        ],
+    ));
+
+    let topology = NetworkTopology::from_raw_parts(vec![input, output], MutationChances::none());
+
+    println!("top: {}", topology.debug_str());
+
+    let simple_network = SimpleNetwork::from_topology(&topology);
+    let candle_network = CandleNetwork::from_topology(&topology);
 
     Ok(())
 }

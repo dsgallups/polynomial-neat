@@ -222,6 +222,7 @@ impl NetworkTopology {
         child
     }
 
+    #[cfg(test)]
     pub fn debug_str(&self) -> String {
         let mut str = String::new();
         for (neuron_index, neuron) in self.neurons.iter().enumerate() {
