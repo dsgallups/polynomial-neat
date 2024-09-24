@@ -1,7 +1,5 @@
 use std::sync::{Arc, RwLock};
 
-use tracing::info;
-
 use crate::prelude::*;
 
 /// Defines a weight and reference to an input [`Neuron`].
@@ -24,40 +22,23 @@ impl NeuronInput {
     }
 
     /// applies a weight and exponent to the input neuron and returns the result
-    pub fn get_input_value(&self, caller: String, idx: usize) -> f32 {
+    pub fn get_input_value(&self) -> f32 {
         // don't need to activate the neuron since x^0 = 1
         if self.exp == 0 {
             return self.weight;
         }
 
         let cached = {
-            let val = self.neuron().read().unwrap().check_activated();
-            if let Some(val) = val {
-                Some(val.powi(self.exp) * self.weight)
-            } else {
-                None
-            }
+            self.neuron()
+                .read()
+                .unwrap()
+                .check_activated()
+                .map(|val| val.powi(self.exp) * self.weight)
         };
-        info!("Getting input value for {}({})", caller, idx);
         if let Some(cached) = cached {
-            info!("--{}({}) Cached and returning", caller, idx);
-            cached.powi(self.exp) * self.weight
+            cached
         } else {
-            info!("--{}({}) Noncached. locking", caller, idx);
-
-            if let Err(e) = self.neuron.try_write() {
-                let read_lock = self.neuron.read().unwrap();
-                info!(
-                    "Couldn't try_write for {}({}): {:?}. Neuron id: {}. Status of neuron in question: {:?}",
-                    caller,
-                    idx,
-                    e,
-                    read_lock.id_short(),
-                    read_lock.check_activated()
-                );
-            }
             let neuron_value = self.neuron.write().unwrap().activate();
-            info!("--{}({}) now holds write lock", caller, idx);
             neuron_value.powi(self.exp) * self.weight
         }
     }

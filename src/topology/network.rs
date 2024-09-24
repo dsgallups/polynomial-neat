@@ -207,12 +207,6 @@ impl NetworkTopology {
 
         child.remove_cycles();
 
-        println!(
-            "\nparent: {}\nchild: {}",
-            self.debug_str(),
-            child.debug_str()
-        );
-
         child
     }
 
