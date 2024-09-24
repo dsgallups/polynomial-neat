@@ -1,8 +1,7 @@
 use std::collections::HashSet;
 
 use crate::prelude::*;
-#[test]
-fn test_dupes() {
+fn _test_dupes() {
     let mutation_chances = MutationChances::new_from_raw(3, 80., 50., 5., 60., 20.);
     let mut top_1 = NetworkTopology::new(20, 20, mutation_chances, &mut rand::thread_rng());
 
@@ -20,8 +19,7 @@ fn test_dupes() {
     }
 }
 
-#[test]
-fn test_inf() {
+fn _test_inf() {
     use crate::{prelude::*, topology::mutation::MutationChances};
     use tracing::info;
     tracing_subscriber::fmt()

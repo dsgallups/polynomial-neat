@@ -22,7 +22,7 @@ impl CandleNetwork {
                 let exponent = input.exponent();
                 let weight = input.weight();
 
-                expander.handle_operation(exponent, weight);
+                expander.handle_operation(weight, exponent);
             }
         }
 
