@@ -9,13 +9,13 @@ use uuid::Uuid;
 mod tests;
 
 #[derive(Debug, Clone, Copy, PartialEq)]
-pub struct Variable<T = ()> {
+pub struct Variable<T> {
     var: T,
     exponent: i32,
 }
 
 #[derive(Debug, Clone, PartialEq)]
-pub struct PolyComponent<T = ()> {
+pub struct PolyComponent<T> {
     weight: f32,
     operands: Vec<Variable<T>>,
 }
@@ -77,7 +77,7 @@ impl<T: PartialEq> Mul for PolyComponent<T> {
 }
 
 #[derive(Debug, Clone, Default, PartialEq)]
-pub struct Polynomial<T = ()> {
+pub struct Polynomial<T> {
     ops: Vec<PolyComponent<T>>,
 }
 
@@ -85,6 +85,13 @@ impl<T: Clone + PartialEq + PartialOrd + std::fmt::Debug> Polynomial<T> {
     pub fn new() -> Self {
         Self { ops: Vec::new() }
     }
+
+    pub fn unit(var: T) -> Self {
+        Self {
+            ops: vec![PolyComponent::new(1., var, 1)],
+        }
+    }
+
     pub fn with_capacity(cap: usize) -> Self {
         Self {
             ops: Vec::with_capacity(cap),

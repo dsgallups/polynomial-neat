@@ -2,10 +2,11 @@ use std::f32::consts::E;
 
 use crate::{candle_net::expander::Polynomial, prelude::*};
 use candle_core::Tensor;
+use uuid::Uuid;
 
 #[derive(Debug)]
 pub struct CandleNetwork {
-    neurons: Vec<Polynomial>,
+    neurons: Vec<Polynomial<Uuid>>,
 }
 
 impl CandleNetwork {
@@ -30,11 +31,11 @@ impl CandleNetwork {
     }
 }
 
-fn create_polynomial(top: &NeuronTopology) -> Polynomial {
+fn create_polynomial(top: &NeuronTopology) -> Polynomial<Uuid> {
     let Some(props) = top.props() else {
         println!("input found");
         //this is an input
-        return Polynomial::default();
+        return Polynomial::unit(top.id());
         //todoo
     };
 

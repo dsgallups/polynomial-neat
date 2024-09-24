@@ -62,7 +62,7 @@ pub struct MutationChances {
 
 impl MutationChances {
     pub fn new(self_mutation_rate: u8) -> Self {
-        let value = 100. / 6.;
+        let value = 100. / 5.;
 
         Self {
             self_mutation: self_mutation_rate,
