@@ -1,3 +1,5 @@
+use std::sync::RwLock;
+
 use crate::prelude::*;
 use rayon::prelude::*;
 use tracing::info;
@@ -87,12 +89,14 @@ impl Neuron {
         then this, even though the "summing" would unblock the rest
         of the threads, cannot complete.
         */
-        let result = self
-            .inputs()
+
+        let sum = RwLock::new(0.);
+        self.inputs()
             .unwrap()
             .par_iter()
             .enumerate()
-            .map(|(idx, input)| {
+            .by_uniform_blocks(1)
+            .for_each(|(idx, input)| {
                 info!(
                     "{} REQUEST INPUT ({}/{})",
                     self.id_short(),
@@ -107,15 +111,16 @@ impl Neuron {
                     num_inputs - 1,
                     res
                 );
-                res
-            })
-            .sum::<f32>();
+                let mut sum = sum.write().unwrap();
+                *sum += res;
+            });
 
         info!("{} RETURNING RESULT FROM INPUTS", self.id_short());
 
-        self.activated_value = Some(result);
+        let sum = sum.into_inner().unwrap();
+        self.activated_value = Some(sum);
 
-        result
+        sum
     }
 
     /// used for input nodes.
