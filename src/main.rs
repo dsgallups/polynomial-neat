@@ -1,50 +1,78 @@
-use candle_neat::{prelude::*, topology::mutation::MutationChances};
-use tracing::info;
-fn main() {
-    tracing_subscriber::fmt()
-        .with_max_level(tracing::Level::INFO)
-        .init();
+use candle_core::{Device, Result, Tensor};
+/*
+fn main() -> Result<()> {
+    let coeffs: Vec<f32> = vec![4.0, 2.0, 9.0, -5.0, 1.0];
+    let val: f32 = 5.0;
 
-    tracing::info!("test");
-    let mutation_chances = MutationChances::new_from_raw(3, 80., 50., 5., 60., 20.);
+    let vals: [f32; 5] = [
+        val.powi(3),
+        val.powi(2),
+        val.powi(1),
+        val.powi(0),
+        val.powi(-1),
+    ];
+    let powers = Tensor::new(&vals, &Device::Cpu)?;
 
-    let mut running_topology =
-        NetworkTopology::new(2, 2, mutation_chances, &mut rand::thread_rng());
+    let coeffs_tensor = Tensor::new(coeffs, &Device::Cpu)?;
+    let product = coeffs_tensor.mul(&powers)?;
 
-    #[allow(unused_assignments)]
-    let mut running_network = running_topology.to_simple_network();
+    let sum = product.sum_all()?; // This is sum(coeffs[i] * powers[i})
+    println!("sum: {}", sum);
+    //let result = sum;
 
-    let mut gen = 0;
-    loop {
-        info!("===NEW GEN ({}) ===", gen);
-        running_topology = running_topology.replicate(&mut rand::thread_rng());
+    Ok(())
+}*/
 
-        //let debug_info = format!("{:#?}", running_topology);
+fn main() -> Result<()> {
+    let coeffs: Vec<f32> = vec![4.0, 2.0, 9.0, -5.0, 1.0];
+    let len = coeffs.len();
 
-        //fs::write(format!("./outputs/org_{}.dbg", gen), debug_info).unwrap();
+    let coeffs_tensor = Tensor::new(coeffs, &Device::Cpu)?;
 
-        running_network = running_topology.to_simple_network();
-        info!("simple network made");
-        let result = running_network.predict(&[1., 5.]).collect::<Vec<f32>>();
+    let outer_1 = coeffs_tensor
+        .unsqueeze(1)?
+        .matmul(&coeffs_tensor.unsqueeze(0)?)?;
 
-        info!(
-            "\nresult: {:?}, network_len: ({}, {}, {})\n===END GEN ({}) ===",
-            result,
-            running_network.num_nodes(),
-            running_network.num_inputs(),
-            running_network.num_outputs(),
-            gen,
-        );
-        gen += 1;
-        /*if gen > 1000 {
-            break;
-        }*/
-    }
-}
+    let flattened = outer_1.flatten(0, 1)?;
 
-#[test]
-fn test_something() {
-    use rayon::iter::{IntoParallelRefIterator, ParallelIterator};
-    let res = [].par_iter().sum::<f32>();
-    println!("res: {}", res)
+    let outer_2 = flattened
+        .unsqueeze(1)?
+        .matmul(&coeffs_tensor.unsqueeze(0)?)?;
+
+    let cubic_tensor = outer_2.reshape((len, len, len))?;
+
+    let val: f32 = 5.;
+
+    let vals: [f32; 5] = [
+        val.powi(3),
+        val.powi(2),
+        val.powi(1),
+        val.powi(0),
+        val.powi(-1),
+    ];
+
+    let powers = Tensor::new(&vals, &Device::Cpu)?;
+
+    // Apply powers across all three dimensions
+    let powers_i = powers.unsqueeze(1)?.unsqueeze(2)?; // Shape: (5, 1, 1)
+    let powers_j = powers.unsqueeze(0)?.unsqueeze(2)?; // Shape: (1, 5, 1)
+    let powers_k = powers.unsqueeze(0)?.unsqueeze(1)?; // Shape: (1, 1, 5)
+
+    println!(
+        "powers i, j, k:\n{}\n{}\n{}\n",
+        powers_i, powers_j, powers_k
+    );
+
+    //let result = cubic_tensor.mul(&powers.expand((5, 5, 5))?)?;
+    // Element-wise multiplication across all three axes
+    let result = cubic_tensor
+        .mul(&powers_i)?
+        .mul(&powers_j)?
+        .mul(&powers_k)?;
+
+    println!("result summed: {}", result.sum_all()?);
+    //output: 71414.1953
+    //expected output: 205587930.8
+
+    Ok(())
 }
