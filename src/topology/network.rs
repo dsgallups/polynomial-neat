@@ -7,9 +7,7 @@ use rand::Rng;
 use tracing::info;
 use uuid::Uuid;
 
-use crate::{prelude::*, topology::activation::Exponent};
-
-use super::mutation::MutationChances;
+use crate::prelude::*;
 
 #[derive(Clone, Debug)]
 pub struct NetworkTopology {

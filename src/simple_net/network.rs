@@ -92,7 +92,7 @@ impl SimpleNetwork {
                 Some(props) => {
                     str.push('[');
                     for input in props.inputs() {
-                        let n = input.neuron().read().unwrap();
+                        let n = input.input().read().unwrap();
 
                         let loc = self
                             .neurons
@@ -127,7 +127,7 @@ impl SimpleNetwork {
                 Some(props) => {
                     str.push('[');
                     for input in props.inputs() {
-                        let n = input.neuron().read().unwrap();
+                        let n = input.input().read().unwrap();
 
                         let loc = self
                             .neurons
@@ -162,7 +162,7 @@ impl SimpleNetwork {
                 Some(props) => {
                     str.push('[');
                     for input in props.inputs() {
-                        let n = input.neuron().read().unwrap();
+                        let n = input.input().read().unwrap();
 
                         let loc = self
                             .neurons

@@ -2,8 +2,6 @@ use crate::prelude::*;
 use rayon::iter::{IndexedParallelIterator, IntoParallelRefIterator as _, ParallelIterator as _};
 use uuid::Uuid;
 
-use super::neuron_type::NeuronType;
-
 pub struct Neuron {
     id: Uuid,
     props: Option<NeuronProps>,

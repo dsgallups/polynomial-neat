@@ -2,7 +2,7 @@ use std::sync::{Arc, RwLock};
 
 use uuid::Uuid;
 
-use crate::{prelude::*, simple_net::neuron_type::NeuronType};
+use crate::prelude::*;
 
 #[derive(Clone, Debug)]
 pub struct NeuronTopology {
