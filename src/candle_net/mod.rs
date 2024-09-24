@@ -12,6 +12,11 @@ mod expander;
 mod network;
 
 pub fn scratch() -> Result<()> {
+    Ok(())
+}
+
+#[test]
+pub fn scratch_two() -> Result<()> {
     println!("hello");
 
     let input = arc(NeuronTopology::input(Uuid::new_v4()));

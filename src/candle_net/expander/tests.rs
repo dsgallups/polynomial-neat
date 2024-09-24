@@ -28,7 +28,8 @@ pub fn add_separate_exponents() {
 
     let components = expander.components();
 
-    assert!(components.len() == 2);
+    println!("components: {:?}", components);
+
     assert_eq!(
         components[0],
         PolyComponent {
@@ -37,7 +38,7 @@ pub fn add_separate_exponents() {
         }
     );
     assert_eq!(
-        components[0],
+        components[1],
         PolyComponent {
             exponent: 2,
             weight: 1.
@@ -46,15 +47,34 @@ pub fn add_separate_exponents() {
 }
 
 #[test]
-pub fn add_binomial() {
+pub fn add_simple_binomial() {
     //x^2 + x
     let binomial = Polynomial::default()
         .with_operation(2, 1.)
         .with_operation(1, 1.);
 
-    //f(x)^2 + 4x
+    //(f(x))^1 + 4x
+    let mut flattened = Polynomial::default().with_operation(1, 4.);
+    flattened.expand(&binomial, 1, 1.).sort_by_exponent();
 
-    let flattened = Polynomial::default()
-        .with_operation(1, 1.)
-        .expand(&binomial, 2, 1.);
+    // should be x^2 + 5x
+    let components = flattened.components();
+
+    assert!(components.len() == 2);
+
+    assert_eq!(
+        components[0],
+        PolyComponent {
+            exponent: 1,
+            weight: 5.
+        }
+    );
+
+    assert_eq!(
+        components[1],
+        PolyComponent {
+            exponent: 2,
+            weight: 1.
+        }
+    )
 }

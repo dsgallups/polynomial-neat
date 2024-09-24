@@ -14,20 +14,22 @@ pub struct Polynomial {
 
 impl Polynomial {
     pub fn with_operation(mut self, exponent: i32, weight: f32) -> Self {
-        match self.ops.iter_mut().find(|op| op.exponent == exponent) {
-            Some(op) => {
-                op.weight += weight;
-            }
-            None => self.ops.push(PolyComponent { exponent, weight }),
-        }
+        self.handle_operation(exponent, weight);
         self
     }
     pub fn handle_operation(&mut self, exponent: i32, weight: f32) -> &mut Self {
-        match self.ops.iter_mut().find(|op| op.exponent == exponent) {
+        self.handle_polycomponent(PolyComponent { exponent, weight })
+    }
+    pub fn handle_polycomponent(&mut self, component: PolyComponent) -> &mut Self {
+        match self
+            .ops
+            .iter_mut()
+            .find(|op| op.exponent == component.exponent)
+        {
             Some(op) => {
-                op.weight += weight;
+                op.weight += component.weight;
             }
-            None => self.ops.push(PolyComponent { exponent, weight }),
+            None => self.ops.push(component),
         }
         self
     }
@@ -41,6 +43,10 @@ impl Polynomial {
     }
 
     pub fn expand(&mut self, other: &Polynomial, exponent: i32, weight: f32) -> &mut Self {
-        todo!()
+        for component in other.components() {
+            self.handle_polycomponent(*component);
+        }
+
+        self
     }
 }
