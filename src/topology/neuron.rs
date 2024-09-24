@@ -91,12 +91,10 @@ impl NeuronTopology {
 
                 for topology_input in topology_props.inputs() {
                     if let Some(topology_input_neuron) = topology_input.neuron() {
-                        topology_input_neuron.read().unwrap().to_neuron(neurons);
+                        topology_input_neuron.to_neuron(neurons);
                         let neuron_in_array = neurons
                             .iter()
-                            .find(|n| {
-                                n.read().unwrap().id() == topology_input_neuron.read().unwrap().id()
-                            })
+                            .find(|n| n.read().unwrap().id() == topology_input_neuron.id())
                             .unwrap();
 
                         new_neuron_inputs.push(NeuronInput::new(

@@ -1,5 +1,5 @@
-use std::sync::{Arc, RwLock};
+use std::sync::Arc;
 
-pub(crate) fn arc<I>(i: I) -> Arc<RwLock<I>> {
-    Arc::new(RwLock::new(i))
+pub(crate) fn arc<I>(i: I) -> Arc<I> {
+    Arc::new(i)
 }

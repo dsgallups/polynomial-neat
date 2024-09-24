@@ -1,10 +1,10 @@
-use std::sync::{RwLock, Weak};
+use std::sync::Weak;
 
 use rand::Rng;
 
 use crate::prelude::*;
 
-pub type NeuronPropsTopology = Props<Weak<RwLock<NeuronTopology>>>;
+pub type NeuronPropsTopology = Props<Weak<NeuronTopology>>;
 
 impl NeuronPropsTopology {
     pub(super) fn set_inputs(&mut self, new_inputs: Vec<InputTopology>) {
