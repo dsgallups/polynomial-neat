@@ -1,4 +1,5 @@
 use crate::prelude::*;
+use rayon::iter::{IndexedParallelIterator, IntoParallelRefIterator as _, ParallelIterator as _};
 use uuid::Uuid;
 
 use super::neuron_type::NeuronType;
@@ -80,8 +81,10 @@ impl Neuron {
         let result = self
             .inputs()
             .unwrap()
-            .iter()
-            .fold(0., |acc, input| acc + input.get_input_value());
+            .par_iter()
+            .by_uniform_blocks(1)
+            .map(|input| input.get_input_value())
+            .sum::<f32>();
 
         self.activated_value = Some(result);
 
