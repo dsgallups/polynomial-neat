@@ -50,7 +50,7 @@ impl<T: Rng> MutationRateExt for T {
 
 pub const MAX_MUTATIONS: u8 = 200;
 
-#[derive(Clone, Copy, Debug)]
+#[derive(Clone, Copy, Debug, PartialEq)]
 pub struct MutationChances {
     self_mutation: u8,
     split_connection: f32,
@@ -71,6 +71,17 @@ impl MutationChances {
             split_connection: value,
             add_connection: value,
             mutate_weight: value,
+        }
+    }
+
+    pub fn none() -> Self {
+        Self {
+            self_mutation: 0,
+            split_connection: 0.,
+            add_connection: 0.,
+            remove_connection: 0.,
+            mutate_weight: 0.,
+            mutate_exponent: 0.,
         }
     }
 

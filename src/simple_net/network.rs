@@ -185,4 +185,32 @@ impl SimpleNetwork {
 
         str
     }
+
+    pub fn from_topology(topology: &NetworkTopology) -> Self {
+        let mut neurons: Vec<Arc<RwLock<SimpleNeuron>>> =
+            Vec::with_capacity(topology.neurons().len());
+        let mut input_layer: Vec<Arc<RwLock<SimpleNeuron>>> = Vec::new();
+        let mut output_layer: Vec<Arc<RwLock<SimpleNeuron>>> = Vec::new();
+
+        for neuron_replicant in topology.neurons() {
+            let neuron = neuron_replicant.read().unwrap();
+
+            neuron.to_neuron(&mut neurons);
+            let neuron = neurons
+                .iter()
+                .find(|n| n.read().unwrap().id() == neuron.id())
+                .unwrap();
+
+            let neuron_read = neuron.read().unwrap();
+
+            if neuron_read.is_input() {
+                input_layer.push(Arc::clone(neuron));
+            }
+            if neuron_read.is_output() {
+                output_layer.push(Arc::clone(neuron));
+            }
+        }
+
+        SimpleNetwork::from_raw_parts(neurons, input_layer, output_layer)
+    }
 }

@@ -1,6 +1,7 @@
 pub mod candle_net;
 pub mod core;
 pub mod simple_net;
+mod test_utils;
 pub mod topology;
 pub mod prelude {
     pub use super::core::{
@@ -12,6 +13,7 @@ pub mod prelude {
     pub use super::simple_net::{
         input::NeuronInput, network::SimpleNetwork, neuron::SimpleNeuron, neuron_type::NeuronProps,
     };
+    pub(crate) use super::test_utils::arc;
     pub use super::topology::{
         input::InputTopology,
         mutation::{MutationAction, MutationChances, MAX_MUTATIONS},

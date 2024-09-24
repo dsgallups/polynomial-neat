@@ -16,6 +16,16 @@ pub struct NetworkTopology {
 }
 
 impl NetworkTopology {
+    pub fn from_raw_parts(
+        neurons: Vec<Arc<RwLock<NeuronTopology>>>,
+        mutation_chances: MutationChances,
+    ) -> Self {
+        Self {
+            neurons,
+            mutation_chances,
+        }
+    }
+
     pub fn new(
         num_inputs: usize,
         num_outputs: usize,
@@ -99,6 +109,10 @@ impl NetworkTopology {
             .iter()
             .map(|n| n.read().unwrap().id())
             .collect()
+    }
+
+    pub fn neurons(&self) -> &[Arc<RwLock<NeuronTopology>>] {
+        &self.neurons
     }
 
     pub fn mutation_chances(&self) -> &MutationChances {
@@ -434,36 +448,40 @@ impl NetworkTopology {
 
     //#[instrument(name = "my_span")]
     pub fn to_simple_network(&self) -> SimpleNetwork {
-        let mut neurons: Vec<Arc<RwLock<SimpleNeuron>>> = Vec::with_capacity(self.neurons.len());
-        let mut input_layer: Vec<Arc<RwLock<SimpleNeuron>>> = Vec::new();
-        let mut output_layer: Vec<Arc<RwLock<SimpleNeuron>>> = Vec::new();
-
-        for neuron_replicant in self.neurons.iter() {
-            let neuron = neuron_replicant.read().unwrap();
-
-            neuron.to_neuron(&mut neurons);
-            let neuron = neurons
-                .iter()
-                .find(|n| n.read().unwrap().id() == neuron.id())
-                .unwrap();
-
-            let neuron_read = neuron.read().unwrap();
-
-            if neuron_read.is_input() {
-                input_layer.push(Arc::clone(neuron));
-            }
-            if neuron_read.is_output() {
-                output_layer.push(Arc::clone(neuron));
-            }
-        }
-
-        info!(
-            "Network final: ({}, {}, {})",
-            neurons.len(),
-            input_layer.len(),
-            output_layer.len()
-        );
-
-        SimpleNetwork::from_raw_parts(neurons, input_layer, output_layer)
+        SimpleNetwork::from_topology(self)
     }
+}
+
+#[test]
+fn make_simple_network() {
+    let input = arc(NeuronTopology::input(Uuid::new_v4()));
+
+    let hidden_1 = arc(NeuronTopology::hidden(
+        Uuid::new_v4(),
+        vec![
+            InputTopology::downgrade(&input, 3., 1),
+            InputTopology::downgrade(&input, 1., 2),
+        ],
+    ));
+
+    let hidden_2 = arc(NeuronTopology::hidden(
+        Uuid::new_v4(),
+        vec![InputTopology::downgrade(&input, 1., 2)],
+    ));
+
+    let output = arc(NeuronTopology::output(
+        Uuid::new_v4(),
+        vec![
+            InputTopology::downgrade(&hidden_1, 1., 1),
+            InputTopology::downgrade(&hidden_2, 1., 1),
+        ],
+    ));
+
+    let topology = NetworkTopology::from_raw_parts(
+        vec![input, hidden_1, hidden_2, output],
+        MutationChances::none(),
+    );
+
+    assert_eq!(topology.neurons().len(), 4);
+    assert_eq!(*topology.mutation_chances(), MutationChances::none());
 }
