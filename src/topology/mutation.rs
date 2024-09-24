@@ -6,8 +6,7 @@ pub enum MutationAction {
     AddConnection,
     RemoveNeuron,
     MutateWeight,
-    MutateBias,
-    MutateActivationFunction,
+    MutateExponent,
 }
 
 pub(crate) trait MutationRateExt {
@@ -43,31 +42,22 @@ impl<T: Rng> MutationRateExt for T {
                 + chances.mutate_weight()
         {
             MutateWeight
-        } else if rate
-            <= chances.split_connection()
-                + chances.add_connection()
-                + chances.remove_connection()
-                + chances.mutate_weight()
-                + chances.mutate_bias()
-        {
-            MutateBias
         } else {
-            MutateActivationFunction
+            MutateExponent
         }
     }
 }
 
 pub const MAX_MUTATIONS: u8 = 200;
 
-#[derive(Clone, Copy, Debug)]
+#[derive(Clone, Copy, Debug, PartialEq)]
 pub struct MutationChances {
     self_mutation: u8,
     split_connection: f32,
     add_connection: f32,
     remove_connection: f32,
     mutate_weight: f32,
-    mutate_bias: f32,
-    mutate_activation_fn: f32,
+    mutate_exponent: f32,
 }
 
 impl MutationChances {
@@ -77,11 +67,21 @@ impl MutationChances {
         Self {
             self_mutation: self_mutation_rate,
             remove_connection: value,
-            mutate_bias: value,
+            mutate_exponent: value,
             split_connection: value,
             add_connection: value,
-            mutate_activation_fn: value,
             mutate_weight: value,
+        }
+    }
+
+    pub fn none() -> Self {
+        Self {
+            self_mutation: 0,
+            split_connection: 0.,
+            add_connection: 0.,
+            remove_connection: 0.,
+            mutate_weight: 0.,
+            mutate_exponent: 0.,
         }
     }
 
@@ -92,8 +92,7 @@ impl MutationChances {
         add_connection: f32,
         remove_connection: f32,
         mutate_weight: f32,
-        mutate_bias: f32,
-        mutate_activation_fn: f32,
+        mutate_exponent: f32,
     ) -> Self {
         let mut new = Self {
             self_mutation,
@@ -101,8 +100,7 @@ impl MutationChances {
             add_connection,
             remove_connection,
             mutate_weight,
-            mutate_bias,
-            mutate_activation_fn,
+            mutate_exponent,
         };
         new.recalculate();
         new
@@ -113,13 +111,12 @@ impl MutationChances {
         const MAX_LOOP: u8 = 5;
         let mut loop_count = 0;
         while rng.gen_rate() < self.self_mutation() && loop_count < MAX_LOOP {
-            let action = match rng.gen_range(0..6) {
+            let action = match rng.gen_range(0..5) {
                 0 => SplitConnection,
                 1 => AddConnection,
                 2 => RemoveNeuron,
                 3 => MutateWeight,
-                4 => MutateBias,
-                _ => MutateActivationFunction,
+                _ => MutateExponent,
             };
 
             // Generate a random number between 1.0 and 10.0
@@ -140,11 +137,8 @@ impl MutationChances {
                 MutationAction::MutateWeight => {
                     self.adjust_mutate_weight(add_to);
                 }
-                MutationAction::MutateBias => {
-                    self.adjust_mutate_bias(add_to);
-                }
-                MutationAction::MutateActivationFunction => {
-                    self.adjust_mutate_activation_fn(add_to);
+                MutationAction::MutateExponent => {
+                    self.adjust_mutate_exponent(add_to);
                 }
             }
 
@@ -198,12 +192,8 @@ impl MutationChances {
         self.mutate_weight
     }
 
-    pub fn mutate_bias(&self) -> f32 {
-        self.mutate_bias
-    }
-
-    pub fn mutate_activation_fn(&self) -> f32 {
-        self.mutate_activation_fn
+    pub fn mutate_exponent(&self) -> f32 {
+        self.mutate_exponent
     }
 
     fn adjust(&mut self, cmd: impl FnOnce(&mut Self)) {
@@ -220,11 +210,8 @@ impl MutationChances {
         if self.mutate_weight < 0. {
             self.mutate_weight = 0.;
         }
-        if self.mutate_bias < 0. {
-            self.mutate_bias = 0.;
-        }
-        if self.mutate_activation_fn < 0. {
-            self.mutate_activation_fn = 0.;
+        if self.mutate_exponent < 0. {
+            self.mutate_exponent = 0.;
         }
 
         self.recalculate();
@@ -270,21 +257,11 @@ impl MutationChances {
         self.recalculate();
     }
 
-    fn adjust_mutate_bias(&mut self, amt: f32) {
-        self.mutate_bias += amt;
+    fn adjust_mutate_exponent(&mut self, amt: f32) {
+        self.mutate_exponent += amt;
 
-        if self.mutate_bias < 0. {
-            self.mutate_bias = 0.;
-        }
-
-        self.recalculate();
-    }
-
-    fn adjust_mutate_activation_fn(&mut self, amt: f32) {
-        self.mutate_activation_fn += amt;
-
-        if self.mutate_activation_fn < 0. {
-            self.mutate_activation_fn = 0.;
+        if self.mutate_exponent < 0. {
+            self.mutate_exponent = 0.;
         }
 
         self.recalculate();
@@ -295,15 +272,13 @@ impl MutationChances {
             + self.add_connection
             + self.remove_connection
             + self.mutate_weight
-            + self.mutate_bias
-            + self.mutate_activation_fn;
+            + self.mutate_exponent;
 
         self.split_connection = (self.split_connection * 100.) / total;
         self.add_connection = (self.add_connection * 100.) / total;
         self.remove_connection = (self.remove_connection * 100.) / total;
         self.mutate_weight = (self.mutate_weight * 100.) / total;
-        self.mutate_bias = (self.mutate_bias * 100.) / total;
-        self.mutate_activation_fn = (self.mutate_activation_fn * 100.) / total;
+        self.mutate_exponent = (self.mutate_exponent * 100.) / total;
     }
 
     pub fn gen_mutation_actions(&self, rng: &mut impl Rng) -> Vec<MutationAction> {
@@ -318,10 +293,7 @@ impl MutationChances {
                 MutationAction::AddConnection => replica.adjust(|s| s.add_connection /= 2.),
                 MutationAction::RemoveNeuron => replica.adjust(|s| s.remove_connection /= 2.),
                 MutationAction::MutateWeight => replica.adjust(|s| s.mutate_weight /= 2.),
-                MutationAction::MutateBias => replica.adjust(|s| s.mutate_bias /= 2.),
-                MutationAction::MutateActivationFunction => {
-                    replica.adjust(|s| s.mutate_activation_fn /= 2.)
-                }
+                MutationAction::MutateExponent => replica.adjust(|s| s.mutate_exponent /= 2.),
             }
 
             actions.push(rng.gen_mutation_action(self));
@@ -338,8 +310,6 @@ pub fn adjust_mutation_chances() {
 
     chances.adjust_split_connection(10.);
 
-    chances.adjust_mutate_activation_fn(-10.);
-
     chances.adjust_add_connection(-10.);
 
     chances.adjust_remove_connection(10.);
@@ -350,8 +320,7 @@ pub fn adjust_mutation_chances() {
         + chances.add_connection
         + chances.remove_connection
         + chances.mutate_weight
-        + chances.mutate_bias
-        + chances.mutate_activation_fn;
+        + chances.mutate_exponent;
     let diff = (100. - total).abs();
 
     assert!(diff <= 0.0001);
@@ -372,8 +341,7 @@ pub fn check_mutate() {
             + chances.add_connection
             + chances.remove_connection
             + chances.mutate_weight
-            + chances.mutate_bias
-            + chances.mutate_activation_fn;
+            + chances.mutate_exponent;
 
         let diff = (100. - total).abs();
 

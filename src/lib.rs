@@ -1,21 +1,25 @@
-pub mod neuron;
-
-pub mod network;
-
+pub mod candle_net;
+pub mod core;
+pub mod simple_net;
+mod test_utils;
 pub mod topology;
-
-//pub mod topology;
-
 pub mod prelude {
-    pub use super::network::Network;
-    pub use super::neuron::{Neuron, NeuronInput, NeuronType};
+    pub use super::core::{
+        activation::{Bias, Exponent},
+        input::Input,
+        neuron::NeuronInner,
+        neuron_type::{NeuronType, Props, PropsType},
+    };
+    pub use super::simple_net::{
+        input::NeuronInput, network::SimpleNetwork, neuron::SimpleNeuron, neuron_type::NeuronProps,
+    };
+    pub(crate) use super::test_utils::arc;
     pub use super::topology::{
-        activation::{Activation, Bias},
         input::InputTopology,
         mutation::{MutationAction, MutationChances, MAX_MUTATIONS},
         network::NetworkTopology,
         neuron::NeuronTopology,
-        neuron_type::NeuronTypeTopology,
+        neuron_type::NeuronPropsTopology,
     };
 }
 
