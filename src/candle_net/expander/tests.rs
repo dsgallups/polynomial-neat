@@ -184,3 +184,41 @@ pub fn multiply_multi_component() {
         PolyComponent::new_complex(12., vec![Variable::new(V::X, 2), Variable::new(V::Y, 2)])
     );
 }
+
+/* Negative exponents */
+
+#[test]
+pub fn neg_exponentiate_monomial() {
+    //x^2
+    let monome = Polynomial::default().with_operation(1., X, 2);
+
+    //(f(x))^-3
+    let mut flattened = Polynomial::default();
+    flattened.expand(monome, 1., -3).sort_by_exponent(X);
+
+    let components = flattened.components();
+
+    assert!(components.len() == 1);
+
+    assert_eq!(components[0], PolyComponent::new(1., X, -6));
+}
+
+#[test]
+pub fn neg_exponentiate_binomial() {
+    //x^2 + x
+    let binomial = Polynomial::default()
+        .with_operation(1., X, 2)
+        .with_operation(1., X, 1);
+
+    //2 * (f(x))^-2
+    let mut flattened = Polynomial::default();
+    flattened.expand(binomial, 2., -2).sort_by_exponent(X);
+
+    let components = flattened.components();
+
+    assert!(components.len() == 3);
+
+    assert_eq!(components[0], PolyComponent::new(2., X, -4));
+    assert_eq!(components[1], PolyComponent::new(4., X, -3));
+    assert_eq!(components[2], PolyComponent::new(2., X, -2));
+}

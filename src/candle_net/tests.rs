@@ -17,12 +17,6 @@ pub fn simple_network() {
         ],
     ));
 
-    /*
-
-       2x is the expected value
-
-    */
-
     let topology = NetworkTopology::from_raw_parts(vec![input, output], MutationChances::none());
 
     let polynomials = get_topology_polynomials(&topology);
@@ -33,10 +27,14 @@ pub fn simple_network() {
 }
 
 #[test]
-pub fn scratch_two() -> Result<()> {
-    println!("hello");
+pub fn two_input_network() -> Result<()> {
+    let i1_id = Uuid::new_v4();
+    let i2_id = Uuid::new_v4();
 
-    let input = arc(NeuronTopology::input(Uuid::new_v4()));
+    println!("Input 1 id: {}\nInput 2 id: {}", i1_id, i2_id);
+
+    let input = arc(NeuronTopology::input(i1_id));
+    let input2 = arc(NeuronTopology::input(i2_id));
 
     let hidden_1 = arc(NeuronTopology::hidden(
         Uuid::new_v4(),
@@ -48,14 +46,22 @@ pub fn scratch_two() -> Result<()> {
 
     let hidden_2 = arc(NeuronTopology::hidden(
         Uuid::new_v4(),
-        vec![InputTopology::downgrade(&input, 1., 2)],
+        vec![InputTopology::downgrade(&input2, 1., 2)],
+    ));
+
+    let hidden_3 = arc(NeuronTopology::output(
+        Uuid::new_v4(),
+        vec![
+            InputTopology::downgrade(&hidden_1, 1., 2),
+            InputTopology::downgrade(&hidden_2, 1., 4),
+        ],
     ));
 
     let output = arc(NeuronTopology::output(
         Uuid::new_v4(),
         vec![
-            InputTopology::downgrade(&hidden_1, 1., 1),
-            InputTopology::downgrade(&hidden_2, 1., 1),
+            InputTopology::downgrade(&hidden_3, 1., 1),
+            InputTopology::downgrade(&hidden_3, 4., 2),
         ],
     ));
 
@@ -64,8 +70,9 @@ pub fn scratch_two() -> Result<()> {
         MutationChances::none(),
     );
 
-    let simple_network = SimpleNetwork::from_topology(&topology);
-    let candle_network = CandleNetwork::from_topology(&topology);
+    let polynomials = get_topology_polynomials(&topology);
+
+    println!("polys: {:#?}", polynomials);
 
     Ok(())
 }
@@ -92,7 +99,6 @@ fn get_topology_polynomials(topology: &NetworkTopology) -> Vec<Polynomial<Uuid>>
 
 fn create_polynomial(top: &NeuronTopology) -> Polynomial<Uuid> {
     let Some(props) = top.props() else {
-        println!("input found");
         //this is an input
         return Polynomial::unit(top.id());
         //todoo
@@ -111,8 +117,6 @@ fn create_polynomial(top: &NeuronTopology) -> Polynomial<Uuid> {
 
         running_polynomial.expand(neuron_polynomial, input.weight(), input.exponent());
     }
-
-    println!("poly: {:?}", running_polynomial);
 
     running_polynomial
 }

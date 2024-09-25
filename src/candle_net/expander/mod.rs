@@ -8,7 +8,7 @@ use uuid::Uuid;
 #[cfg(test)]
 mod tests;
 
-#[derive(Debug, Clone, Copy, PartialEq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Ord, PartialOrd)]
 pub struct Variable<T> {
     var: T,
     exponent: i32,
@@ -26,7 +26,7 @@ pub struct PolyComponent<T> {
     operands: Vec<Variable<T>>,
 }
 
-impl<T> PolyComponent<T> {
+impl<T: Ord> PolyComponent<T> {
     pub fn new(weight: f32, var: T, exponent: i32) -> Self {
         if exponent == 0 {
             return Self {
@@ -40,8 +40,20 @@ impl<T> PolyComponent<T> {
             operands: vec![Variable { var, exponent }],
         }
     }
-    pub fn new_complex(weight: f32, operands: Vec<Variable<T>>) -> Self {
+    pub fn base(weight: f32) -> Self {
+        Self {
+            weight,
+            operands: Vec::new(),
+        }
+    }
+
+    pub fn new_complex(weight: f32, mut operands: Vec<Variable<T>>) -> Self {
+        operands.sort();
         Self { weight, operands }
+    }
+
+    pub fn sort(&mut self) {
+        self.operands.sort();
     }
 }
 
@@ -96,7 +108,7 @@ impl<T> Default for Polynomial<T> {
     }
 }
 
-impl<T: Clone + PartialEq + PartialOrd + std::fmt::Debug> Polynomial<T> {
+impl<T: Clone + PartialEq + PartialOrd + Ord + std::fmt::Debug> Polynomial<T> {
     pub fn new() -> Self {
         Self { ops: Vec::new() }
     }
@@ -125,7 +137,8 @@ impl<T: Clone + PartialEq + PartialOrd + std::fmt::Debug> Polynomial<T> {
     pub fn handle_operation(&mut self, weight: f32, variable: T, exponent: i32) -> &mut Self {
         self.handle_polycomponent(PolyComponent::new(weight, variable, exponent))
     }
-    pub fn handle_polycomponent(&mut self, component: PolyComponent<T>) -> &mut Self {
+    pub fn handle_polycomponent(&mut self, mut component: PolyComponent<T>) -> &mut Self {
+        component.sort();
         match self
             .ops
             .iter_mut()
@@ -160,6 +173,17 @@ impl<T: Clone + PartialEq + PartialOrd + std::fmt::Debug> Polynomial<T> {
         self.ops
     }
 
+    /// raises the whole polynomial to the power of -1.
+    ///
+    /// In turn, all of the exponents are multiplied by -1.
+    pub fn invert(&mut self) {
+        for component in self.ops.iter_mut() {
+            for operand in component.operands.iter_mut() {
+                operand.exponent *= -1;
+            }
+        }
+    }
+
     /// FOIL
     fn mul_expand(self, other: &Polynomial<T>) -> Polynomial<T> {
         let mut result =
@@ -177,11 +201,20 @@ impl<T: Clone + PartialEq + PartialOrd + std::fmt::Debug> Polynomial<T> {
 
     pub fn expand(&mut self, other: Polynomial<T>, weight: f32, exponent: i32) -> &mut Self {
         // important to clone here since mutating other will multiply the exponents.
+
+        if exponent == 0 {
+            self.handle_polycomponent(PolyComponent::base(weight));
+            return self;
+        }
+
         let mut running = other.clone();
-        if exponent > 1 {
-            for _ in 1..exponent {
-                running = running.mul_expand(&other);
-            }
+
+        for _ in 1..exponent.abs() {
+            running = running.mul_expand(&other);
+        }
+
+        if exponent < 0 {
+            running.invert();
         }
 
         running *= weight;
