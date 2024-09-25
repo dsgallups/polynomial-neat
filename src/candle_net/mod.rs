@@ -10,8 +10,12 @@ use expander::Polynomial;
 use fnv::FnvHashMap;
 use network::CandleNetwork;
 use uuid::Uuid;
+mod basis_prime;
 mod expander;
 mod network;
+mod neuron;
+#[cfg(test)]
+mod scratch;
 
 #[cfg(test)]
 mod tests;

@@ -1,18 +1,22 @@
-use super::get_topology_polynomials;
-use crate::{candle_net::expander::Polynomial, prelude::*};
+use super::{get_topology_polynomials, neuron::CandleNeuron};
+use crate::{
+    candle_net::{
+        basis_prime::basis_from_poly_list,
+        expander::{Polynomial, Variable},
+    },
+    prelude::*,
+};
 use candle_core::Tensor;
 use fnv::FnvHashMap;
 use std::f32::consts::E;
 use uuid::Uuid;
 
 pub struct CandleNetwork {
-    inputs: Vec<f32>,
-    outputs: Tensor,
+    coeff_tensor: Tensor,
 }
 
 impl CandleNetwork {
     pub fn from_topology(topology: &NetworkTopology) -> Self {
-        let output_polynomials = get_topology_polynomials(topology);
         let inputs: FnvHashMap<Uuid, usize> = topology
             .neuron_ids()
             .into_iter()
@@ -20,10 +24,16 @@ impl CandleNetwork {
             .map(|(v, k)| (k, v))
             .collect();
 
-        let output_polynomials: Vec<Polynomial<usize>> = output_polynomials
+        let output_polynomials = get_topology_polynomials(topology)
             .into_iter()
-            .map(|polynomial| polynomial.map_operands(&inputs))
-            .collect();
+            .map(|poly| {
+                let mut new = poly.map_operands(&inputs);
+                new.sort_by_exponent(0);
+                new
+            })
+            .collect::<Vec<_>>();
+
+        let variable_basis = basis_from_poly_list(&output_polynomials);
 
         todo!();
     }
