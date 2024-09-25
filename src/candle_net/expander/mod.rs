@@ -26,8 +26,31 @@ pub struct PolyComponent<T> {
     operands: Vec<Variable<T>>,
 }
 
+impl<T> Default for PolyComponent<T> {
+    fn default() -> Self {
+        Self {
+            weight: 0.,
+            operands: Vec::new(),
+        }
+    }
+}
+
 impl<T: Ord> PolyComponent<T> {
-    pub fn new(weight: f32, var: T, exponent: i32) -> Self {
+    pub fn new() -> Self {
+        Self {
+            weight: 0.,
+            operands: Vec::new(),
+        }
+    }
+
+    pub fn with_capacity(cap: usize) -> Self {
+        Self {
+            weight: 0.,
+            operands: Vec::with_capacity(cap),
+        }
+    }
+
+    pub fn simple(weight: f32, var: T, exponent: i32) -> Self {
         if exponent == 0 {
             return Self {
                 weight,
@@ -40,6 +63,33 @@ impl<T: Ord> PolyComponent<T> {
             operands: vec![Variable { var, exponent }],
         }
     }
+
+    pub fn with_weight(mut self, weight: f32) -> Self {
+        self.weight = weight;
+        self
+    }
+
+    /// Adds the operand to the component. Simplifies if the operand already exists and sorts.
+    pub fn with_operand(mut self, var: T, exponent: i32) -> Self {
+        if exponent == 0 {
+            return self;
+        }
+
+        match self.operands.iter_mut().find(|op| op.var == var) {
+            Some(op) => {
+                op.exponent += exponent;
+            }
+            None => {
+                self.operands.push(Variable { var, exponent });
+                self.operands.sort();
+                return self;
+            }
+        }
+
+        self.operands.retain(|op| op.exponent != 0);
+        self
+    }
+
     pub fn base(weight: f32) -> Self {
         Self {
             weight,
@@ -47,8 +97,10 @@ impl<T: Ord> PolyComponent<T> {
         }
     }
 
-    pub fn new_complex(weight: f32, mut operands: Vec<Variable<T>>) -> Self {
+    /// Note: does not simplify duplicates. use `with_operand` for this behavior.
+    pub fn from_raw_parts(weight: f32, mut operands: Vec<Variable<T>>) -> Self {
         operands.sort();
+
         Self { weight, operands }
     }
 
@@ -115,7 +167,7 @@ impl<T: Clone + PartialEq + PartialOrd + Ord + std::fmt::Debug> Polynomial<T> {
 
     pub fn unit(var: T) -> Self {
         Self {
-            ops: vec![PolyComponent::new(1., var, 1)],
+            ops: vec![PolyComponent::simple(1., var, 1)],
         }
     }
 
@@ -135,7 +187,7 @@ impl<T: Clone + PartialEq + PartialOrd + Ord + std::fmt::Debug> Polynomial<T> {
     }
 
     pub fn handle_operation(&mut self, weight: f32, variable: T, exponent: i32) -> &mut Self {
-        self.handle_polycomponent(PolyComponent::new(weight, variable, exponent))
+        self.handle_polycomponent(PolyComponent::simple(weight, variable, exponent))
     }
     pub fn handle_polycomponent(&mut self, mut component: PolyComponent<T>) -> &mut Self {
         component.sort();

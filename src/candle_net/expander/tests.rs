@@ -15,7 +15,7 @@ pub fn add_simple_exponent() {
     let components = expander.components();
 
     assert!(components.len() == 1);
-    assert_eq!(components[0], PolyComponent::new(2., X, 1))
+    assert_eq!(components[0], PolyComponent::simple(2., X, 1))
 }
 
 #[test]
@@ -28,8 +28,8 @@ pub fn add_separate_exponents() {
 
     let components = expander.components();
 
-    assert_eq!(components[0], PolyComponent::new(1., X, 1));
-    assert_eq!(components[1], PolyComponent::new(1., X, 2),)
+    assert_eq!(components[0], PolyComponent::simple(1., X, 1));
+    assert_eq!(components[1], PolyComponent::simple(1., X, 2),)
 }
 
 #[test]
@@ -49,9 +49,9 @@ pub fn add_simple_binomial() {
 
     assert!(components.len() == 2);
 
-    assert_eq!(components[0], PolyComponent::new(5., X, 1));
+    assert_eq!(components[0], PolyComponent::simple(5., X, 1));
 
-    assert_eq!(components[1], PolyComponent::new(1., X, 2),)
+    assert_eq!(components[1], PolyComponent::simple(1., X, 2),)
 }
 
 #[test]
@@ -67,7 +67,7 @@ pub fn exponentiate_simple_monomial() {
 
     assert!(components.len() == 1);
 
-    assert_eq!(components[0], PolyComponent::new(1., X, 6));
+    assert_eq!(components[0], PolyComponent::simple(1., X, 6));
 }
 
 #[test]
@@ -83,7 +83,7 @@ pub fn exponentiate_weighted_monomial() {
 
     assert!(components.len() == 1);
 
-    assert_eq!(components[0], PolyComponent::new(27., X, 6),);
+    assert_eq!(components[0], PolyComponent::simple(27., X, 6),);
 }
 
 #[test]
@@ -99,7 +99,7 @@ pub fn weight_and_exponentiate_weighted_monomial() {
 
     assert!(components.len() == 1);
 
-    assert_eq!(components[0], PolyComponent::new(648., X, 6));
+    assert_eq!(components[0], PolyComponent::simple(648., X, 6));
 }
 
 #[test]
@@ -117,9 +117,9 @@ pub fn exponentiate_simple_binomial() {
 
     assert!(components.len() == 3);
 
-    assert_eq!(components[0], PolyComponent::new(1., X, 2),);
-    assert_eq!(components[1], PolyComponent::new(2., X, 3),);
-    assert_eq!(components[2], PolyComponent::new(1., X, 4),);
+    assert_eq!(components[0], PolyComponent::simple(1., X, 2),);
+    assert_eq!(components[1], PolyComponent::simple(2., X, 3),);
+    assert_eq!(components[2], PolyComponent::simple(1., X, 4),);
 }
 
 #[test]
@@ -138,13 +138,13 @@ pub fn exponentiate_complex_polynomial() {
 
     assert!(components.len() == 7);
 
-    assert_eq!(components[0], PolyComponent::new(27., X, 0),);
-    assert_eq!(components[1], PolyComponent::new(108., X, 1),);
-    assert_eq!(components[2], PolyComponent::new(171., X, 2),);
-    assert_eq!(components[3], PolyComponent::new(136., X, 3));
-    assert_eq!(components[4], PolyComponent::new(57., X, 4),);
-    assert_eq!(components[5], PolyComponent::new(12., X, 5),);
-    assert_eq!(components[6], PolyComponent::new(1., X, 6),);
+    assert_eq!(components[0], PolyComponent::simple(27., X, 0),);
+    assert_eq!(components[1], PolyComponent::simple(108., X, 1),);
+    assert_eq!(components[2], PolyComponent::simple(171., X, 2),);
+    assert_eq!(components[3], PolyComponent::simple(136., X, 3));
+    assert_eq!(components[4], PolyComponent::simple(57., X, 4),);
+    assert_eq!(components[5], PolyComponent::simple(12., X, 5),);
+    assert_eq!(components[6], PolyComponent::simple(1., X, 6),);
 }
 
 #[derive(Clone, Copy, PartialOrd, Ord, Debug, PartialEq, Eq)]
@@ -162,13 +162,13 @@ pub fn add_simple_exponent_v() {
     let components = expander.components();
 
     assert!(components.len() == 2);
-    assert_eq!(components[0], PolyComponent::new(1., V::X, 1));
-    assert_eq!(components[1], PolyComponent::new(1., V::Y, 1));
+    assert_eq!(components[0], PolyComponent::simple(1., V::X, 1));
+    assert_eq!(components[1], PolyComponent::simple(1., V::Y, 1));
 }
 
 #[test]
 pub fn multiply_multi_component() {
-    let monome = Polynomial::default().with_polycomponent(PolyComponent::new_complex(
+    let monome = Polynomial::default().with_polycomponent(PolyComponent::from_raw_parts(
         2.,
         vec![Variable::new(V::X, 1), Variable::new(V::Y, 1)],
     ));
@@ -181,7 +181,7 @@ pub fn multiply_multi_component() {
     assert!(components.len() == 1);
     assert_eq!(
         components[0],
-        PolyComponent::new_complex(12., vec![Variable::new(V::X, 2), Variable::new(V::Y, 2)])
+        PolyComponent::from_raw_parts(12., vec![Variable::new(V::X, 2), Variable::new(V::Y, 2)])
     );
 }
 
@@ -200,7 +200,7 @@ pub fn neg_exponentiate_monomial() {
 
     assert!(components.len() == 1);
 
-    assert_eq!(components[0], PolyComponent::new(1., X, -6));
+    assert_eq!(components[0], PolyComponent::simple(1., X, -6));
 }
 
 #[test]
@@ -218,7 +218,55 @@ pub fn neg_exponentiate_binomial() {
 
     assert!(components.len() == 3);
 
-    assert_eq!(components[0], PolyComponent::new(2., X, -4));
-    assert_eq!(components[1], PolyComponent::new(4., X, -3));
-    assert_eq!(components[2], PolyComponent::new(2., X, -2));
+    assert_eq!(components[0], PolyComponent::simple(2., X, -4));
+    assert_eq!(components[1], PolyComponent::simple(4., X, -3));
+    assert_eq!(components[2], PolyComponent::simple(2., X, -2));
+}
+
+#[test]
+pub fn add_exponents() {
+    let monome = Polynomial::default().with_polycomponent(
+        PolyComponent::new()
+            .with_weight(1.)
+            .with_operand(X, 2)
+            .with_operand(X, 3),
+    );
+
+    let components = monome.components();
+
+    assert!(components.len() == 1);
+
+    assert_eq!(components[0], PolyComponent::simple(1., X, 5));
+}
+
+#[test]
+pub fn cancel_exponents() {
+    let monome = Polynomial::default().with_polycomponent(
+        PolyComponent::new()
+            .with_weight(1.)
+            .with_operand(X, 2)
+            .with_operand(X, -2),
+    );
+
+    let components = monome.components();
+
+    assert!(components.len() == 1);
+
+    assert_eq!(components[0], PolyComponent::base(1.));
+}
+
+#[test]
+pub fn add_bases() {
+    let monome = Polynomial::<X>::default()
+        .with_polycomponent(PolyComponent::simple(2., X, 3))
+        .with_polycomponent(PolyComponent::simple(3., X, 3))
+        .with_polycomponent(PolyComponent::base(4.))
+        .with_polycomponent(PolyComponent::base(3.));
+
+    let components = monome.components();
+
+    assert!(components.len() == 2);
+
+    assert_eq!(components[0], PolyComponent::simple(5., X, 3));
+    assert_eq!(components[1], PolyComponent::base(7.));
 }
