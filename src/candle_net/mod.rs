@@ -6,6 +6,8 @@ use std::sync::{Arc, RwLock};
 
 use crate::prelude::*;
 use candle_core::{Device, Result, Tensor};
+use expander::Polynomial;
+use fnv::FnvHashMap;
 use network::CandleNetwork;
 use uuid::Uuid;
 mod expander;
@@ -14,6 +16,46 @@ mod network;
 #[cfg(test)]
 mod tests;
 
-pub fn scratch() -> Result<()> {
-    Ok(())
+fn get_topology_polynomials(topology: &NetworkTopology) -> Vec<Polynomial<Uuid>> {
+    let mut neurons = Vec::with_capacity(topology.neurons().len());
+
+    for output in topology.neurons().iter().filter_map(|neuron| {
+        let neuron = neuron.read().unwrap();
+        if neuron.is_output() {
+            Some(neuron)
+        } else {
+            None
+        }
+    }) {
+        //let output_tensor =
+
+        let poly = create_polynomial(&output);
+        neurons.push(poly)
+    }
+
+    neurons
+}
+
+fn create_polynomial(top: &NeuronTopology) -> Polynomial<Uuid> {
+    let Some(props) = top.props() else {
+        //this is an input
+        return Polynomial::unit(top.id());
+        //todoo
+    };
+
+    let mut running_polynomial = Polynomial::default();
+    for input in props.inputs() {
+        let Some(neuron) = input.neuron() else {
+            continue;
+        };
+        let Ok(neuron) = neuron.read() else {
+            panic!("can't read neuron")
+        };
+
+        let neuron_polynomial = create_polynomial(&neuron);
+
+        running_polynomial.expand(neuron_polynomial, input.weight(), input.exponent());
+    }
+
+    running_polynomial
 }
