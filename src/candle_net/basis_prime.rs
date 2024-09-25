@@ -44,11 +44,11 @@ impl<T> BasisTemplate<T> {
         self.0.get(index).map(|v| v.as_slice())
     }
 
-    pub fn new(polynomials: Vec<Polynomial<T>>) -> Self
+    pub fn new(polynomials: &[Polynomial<T>]) -> Self
     where
         T: Clone + PartialEq,
     {
-        let basis_vec = basis_from_poly_list(&polynomials);
+        let basis_vec = basis_from_poly_list(polynomials);
         Self::from_raw(basis_vec)
     }
     pub fn make_tensor(

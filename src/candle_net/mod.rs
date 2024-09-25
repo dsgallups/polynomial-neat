@@ -14,7 +14,6 @@ mod basis_prime;
 mod coeff;
 mod expander;
 mod network;
-mod neuron;
 #[cfg(test)]
 mod scratch;
 

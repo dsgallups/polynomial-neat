@@ -1,4 +1,4 @@
-use super::{get_topology_polynomials, neuron::CandleNeuron};
+use super::{basis_prime::BasisTemplate, coeff::Coefficients, get_topology_polynomials};
 use crate::{
     candle_net::{
         basis_prime::basis_from_poly_list,
@@ -6,17 +6,19 @@ use crate::{
     },
     prelude::*,
 };
-use candle_core::Tensor;
+use candle_core::{Device, Result, Tensor};
 use fnv::FnvHashMap;
 use std::f32::consts::E;
 use uuid::Uuid;
 
-pub struct CandleNetwork {
-    coeff_tensor: Tensor,
+pub struct CandleNetwork<'a> {
+    coeff_tensor: Coefficients,
+    basis_template: BasisTemplate<usize>,
+    device: &'a Device,
 }
 
-impl CandleNetwork {
-    pub fn from_topology(topology: &NetworkTopology) -> Self {
+impl<'a> CandleNetwork<'a> {
+    pub fn from_topology(topology: &NetworkTopology, device: &'a Device) -> Result<Self> {
         let inputs: FnvHashMap<Uuid, usize> = topology
             .neuron_ids()
             .into_iter()
@@ -35,7 +37,25 @@ impl CandleNetwork {
 
         let variable_basis = basis_from_poly_list(&output_polynomials);
 
-        todo!();
+        let basis_template = BasisTemplate::new(&output_polynomials);
+        let coeff_tensor = Coefficients::new(&output_polynomials, &basis_template, device)?;
+
+        Ok(Self {
+            coeff_tensor,
+            basis_template,
+            device,
+        })
+    }
+
+    pub fn predict(&self, inputs: &[f32]) -> Result<impl Iterator<Item = f32>> {
+        let basis = self
+            .basis_template
+            .make_tensor(inputs.iter().enumerate().map(|(p, v)| (p, *v)), self.device)?;
+
+        let result = self.coeff_tensor.inner().matmul(&basis)?;
+        let res: Vec<f32> = result.to_vec1()?;
+
+        Ok(res.into_iter())
     }
 }
 
