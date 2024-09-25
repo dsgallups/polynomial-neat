@@ -1,5 +1,8 @@
 use std::{
     cmp::Ordering,
+    collections::HashMap,
+    fmt::Debug,
+    hash::{BuildHasher, Hash},
     ops::{Mul, MulAssign},
 };
 
@@ -18,12 +21,35 @@ impl<T> Variable<T> {
     pub fn new(var: T, exponent: i32) -> Self {
         Self { var, exponent }
     }
+
+    pub fn exponent(&self) -> i32 {
+        self.exponent
+    }
+    pub fn var(&self) -> &T {
+        &self.var
+    }
+}
+
+impl<T: Debug + Hash + Eq> Variable<T> {
+    pub fn map_operands<V: Clone + Debug, S: BuildHasher>(
+        self,
+        operands: &HashMap<T, V, S>,
+    ) -> Variable<V> {
+        let Some(new_var) = operands.get(&self.var).cloned() else {
+            panic!("couldn't find {:?}\noperands: {:#?}", self.var, operands);
+        };
+
+        Variable {
+            var: new_var,
+            exponent: self.exponent,
+        }
+    }
 }
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct PolyComponent<T> {
     weight: f32,
-    operands: Vec<Variable<T>>,
+    pub(crate) operands: Vec<Variable<T>>,
 }
 
 impl<T> Default for PolyComponent<T> {
@@ -31,6 +57,32 @@ impl<T> Default for PolyComponent<T> {
         Self {
             weight: 0.,
             operands: Vec::new(),
+        }
+    }
+}
+
+impl<T> PolyComponent<T> {
+    pub fn weight(&self) -> f32 {
+        self.weight
+    }
+
+    pub fn operands(&self) -> &[Variable<T>] {
+        &self.operands
+    }
+}
+
+impl<T: Debug + Hash + Eq> PolyComponent<T> {
+    pub fn map_operands<V: Clone + Debug, S: BuildHasher>(
+        self,
+        operands: &HashMap<T, V, S>,
+    ) -> PolyComponent<V> {
+        PolyComponent {
+            weight: self.weight,
+            operands: self
+                .operands
+                .into_iter()
+                .map(|var| var.map_operands(operands))
+                .collect(),
         }
     }
 }
@@ -160,6 +212,34 @@ impl<T> Default for Polynomial<T> {
     }
 }
 
+impl<T> Polynomial<T> {
+    pub fn parts(&self) -> &[PolyComponent<T>] {
+        &self.ops
+    }
+
+    pub fn components(&self) -> &[PolyComponent<T>] {
+        &self.ops
+    }
+    pub fn into_components(self) -> Vec<PolyComponent<T>> {
+        self.ops
+    }
+}
+
+impl<T: Debug + Hash + Eq> Polynomial<T> {
+    pub fn map_operands<V: Debug + Clone, S: BuildHasher>(
+        self,
+        operands: &HashMap<T, V, S>,
+    ) -> Polynomial<V> {
+        Polynomial {
+            ops: self
+                .ops
+                .into_iter()
+                .map(|polyc| polyc.map_operands(operands))
+                .collect(),
+        }
+    }
+}
+
 impl<T: Clone + PartialEq + PartialOrd + Ord + std::fmt::Debug> Polynomial<T> {
     pub fn new() -> Self {
         Self { ops: Vec::new() }
@@ -216,13 +296,6 @@ impl<T: Clone + PartialEq + PartialOrd + Ord + std::fmt::Debug> Polynomial<T> {
                 (None, None) => a.weight.partial_cmp(&b.weight).unwrap_or(Ordering::Equal),
             }
         });
-    }
-
-    pub fn components(&self) -> &[PolyComponent<T>] {
-        &self.ops
-    }
-    pub fn into_components(self) -> Vec<PolyComponent<T>> {
-        self.ops
     }
 
     /// raises the whole polynomial to the power of -1.
