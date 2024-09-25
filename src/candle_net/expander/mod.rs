@@ -14,6 +14,12 @@ pub struct Variable<T> {
     exponent: i32,
 }
 
+impl<T> Variable<T> {
+    pub fn new(var: T, exponent: i32) -> Self {
+        Self { var, exponent }
+    }
+}
+
 #[derive(Debug, Clone, PartialEq)]
 pub struct PolyComponent<T> {
     weight: f32,
@@ -33,6 +39,9 @@ impl<T> PolyComponent<T> {
             weight,
             operands: vec![Variable { var, exponent }],
         }
+    }
+    pub fn new_complex(weight: f32, operands: Vec<Variable<T>>) -> Self {
+        Self { weight, operands }
     }
 }
 
@@ -76,9 +85,15 @@ impl<T: PartialEq> Mul for PolyComponent<T> {
     }
 }
 
-#[derive(Debug, Clone, Default, PartialEq)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct Polynomial<T> {
     ops: Vec<PolyComponent<T>>,
+}
+
+impl<T> Default for Polynomial<T> {
+    fn default() -> Self {
+        Self { ops: Vec::new() }
+    }
 }
 
 impl<T: Clone + PartialEq + PartialOrd + std::fmt::Debug> Polynomial<T> {
@@ -101,6 +116,12 @@ impl<T: Clone + PartialEq + PartialOrd + std::fmt::Debug> Polynomial<T> {
         self.handle_operation(weight, variable, exponent);
         self
     }
+
+    pub fn with_polycomponent(mut self, component: PolyComponent<T>) -> Self {
+        self.handle_polycomponent(component);
+        self
+    }
+
     pub fn handle_operation(&mut self, weight: f32, variable: T, exponent: i32) -> &mut Self {
         self.handle_polycomponent(PolyComponent::new(weight, variable, exponent))
     }
@@ -139,6 +160,7 @@ impl<T: Clone + PartialEq + PartialOrd + std::fmt::Debug> Polynomial<T> {
         self.ops
     }
 
+    /// FOIL
     fn mul_expand(self, other: &Polynomial<T>) -> Polynomial<T> {
         let mut result =
             Polynomial::with_capacity(self.components().len().max(other.components().len()) * 2); // a guesstimate

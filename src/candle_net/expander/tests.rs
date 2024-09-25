@@ -1,3 +1,5 @@
+use crate::candle_net::expander::Variable;
+
 use super::{PolyComponent, Polynomial};
 use pretty_assertions::{assert_eq, assert_ne};
 
@@ -143,4 +145,42 @@ pub fn exponentiate_complex_polynomial() {
     assert_eq!(components[4], PolyComponent::new(57., X, 4),);
     assert_eq!(components[5], PolyComponent::new(12., X, 5),);
     assert_eq!(components[6], PolyComponent::new(1., X, 6),);
+}
+
+#[derive(Clone, Copy, PartialOrd, Ord, Debug, PartialEq, Eq)]
+enum V {
+    X,
+    Y,
+}
+
+#[test]
+pub fn add_simple_exponent_v() {
+    let mut expander = Polynomial::default();
+
+    expander.handle_operation(1., V::X, 1);
+    expander.handle_operation(1., V::Y, 1);
+    let components = expander.components();
+
+    assert!(components.len() == 2);
+    assert_eq!(components[0], PolyComponent::new(1., V::X, 1));
+    assert_eq!(components[1], PolyComponent::new(1., V::Y, 1));
+}
+
+#[test]
+pub fn multiply_multi_component() {
+    let monome = Polynomial::default().with_polycomponent(PolyComponent::new_complex(
+        2.,
+        vec![Variable::new(V::X, 1), Variable::new(V::Y, 1)],
+    ));
+
+    let mut simple_outer = Polynomial::default();
+    simple_outer.expand(monome, 3., 2);
+
+    let components = simple_outer.components();
+
+    assert!(components.len() == 1);
+    assert_eq!(
+        components[0],
+        PolyComponent::new_complex(12., vec![Variable::new(V::X, 2), Variable::new(V::Y, 2)])
+    );
 }
