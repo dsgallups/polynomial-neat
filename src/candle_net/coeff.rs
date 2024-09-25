@@ -35,4 +35,7 @@ impl Coefficients {
 
         Ok(Self(tensor))
     }
+    pub fn inner(&self) -> &Tensor {
+        &self.0
+    }
 }

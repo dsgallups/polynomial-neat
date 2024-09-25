@@ -77,13 +77,6 @@ fn scratch() -> Result<()> {
 
     println!("converted:\n{:#?}", output_polynomials);
 
-    /*
-       x^2
-       xy
-       y^2
-       x
-       y
-    */
     let basis = super::basis_prime::basis_from_poly_list(&output_polynomials);
 
     println!("basis:\n{:#?}", basis);
@@ -111,13 +104,27 @@ fn scratch() -> Result<()> {
        [2],
        [3]
        ]
+
+        output node 1, being 9x^2 + 6xy + y^2 should equal
+
+        121
+        22
+
+
     */
 
     let basis_tensor = basis_template.make_tensor(predictions, &Device::Cpu)?;
-    // now make the tensor for our coefficients
-    let coef = Coefficients::new(&output_polynomials, &basis_template, &Device::Cpu);
 
     println!("basis tensor: {}", basis_tensor);
+    // now make the tensor for our coefficients
+    let coef = Coefficients::new(&output_polynomials, &basis_template, &Device::Cpu)?;
+
+    println!("coef: {}", coef.inner());
+
+    //let result = basis_tensor.matmul(coef.inner())?;
+    let result = coef.inner().matmul(&basis_tensor)?;
+
+    println!("result: {}", result);
 
     Ok(())
 }
