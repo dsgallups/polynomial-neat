@@ -285,6 +285,8 @@ impl<T: Clone + PartialEq + PartialOrd + Ord + std::fmt::Debug> Polynomial<T> {
     }
 
     pub fn sort_by_exponent(&mut self, order_on: T) {
+        self.ops.iter_mut().for_each(|op| op.sort());
+
         self.ops.sort_by(|a, b| {
             let t_on_a = a.operands.iter().find(|op| op.var == order_on);
             let t_on_b = b.operands.iter().find(|op| op.var == order_on);

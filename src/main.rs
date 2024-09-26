@@ -1,3 +1,4 @@
+use candle_core::{Device, MetalDevice};
 use candle_neat::{
     candle_net::network::CandleNetwork, prelude::*, topology::mutation::MutationChances,
 };
@@ -6,8 +7,9 @@ fn main() {
     let mutation_chances = MutationChances::new_from_raw(3, 80., 50., 5., 60., 20.);
 
     let mut running_topology =
-        NetworkTopology::new(2, 2, mutation_chances, &mut rand::thread_rng());
+        NetworkTopology::new(2, 20, mutation_chances, &mut rand::thread_rng());
 
+    let dev = Device::new_metal(0).unwrap();
     let mut gen = 0;
     println!("here");
     loop {
@@ -23,8 +25,7 @@ fn main() {
         println!("simple network made");
         let result = running_network.predict(&[1., 5.]).collect::<Vec<f32>>();
         println!("simple net predicted");
-        let candle_network =
-            CandleNetwork::from_topology(&running_topology, &candle_core::Device::Cpu).unwrap();
+        let candle_network = CandleNetwork::from_topology(&running_topology, &dev).unwrap();
         println!("candle network made");
         let candle_result = candle_network
             .predict(&[1., 5.])
@@ -32,7 +33,7 @@ fn main() {
             .collect::<Vec<_>>();
 
         println!(
-            "\nresult: {:?},candle_result: {:?} network_len: ({}, {}, {})\n===END GEN ({}) ===",
+            "\nresult: {:?}\ncandle_result: {:?} network_len: ({}, {}, {})\n===END GEN ({}) ===",
             result,
             candle_result,
             running_network.num_nodes(),

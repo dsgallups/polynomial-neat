@@ -8,6 +8,10 @@ use crate::{
 };
 use candle_core::{Device, Result, Tensor};
 use fnv::FnvHashMap;
+use rayon::iter::{
+    IntoParallelIterator, IntoParallelRefIterator, IntoParallelRefMutIterator,
+    ParallelIterator as _,
+};
 use std::{env::var, f32::consts::E};
 use uuid::Uuid;
 
@@ -28,11 +32,11 @@ impl<'a> CandleNetwork<'a> {
         println!("here 1");
 
         let mut output_polynomials = get_topology_polynomials(topology)
-            .into_iter()
+            .into_par_iter()
             .map(|poly| poly.map_operands(&inputs))
             .collect::<Vec<_>>();
         output_polynomials
-            .iter_mut()
+            .par_iter_mut()
             .for_each(|poly| poly.sort_by_exponent(0));
         println!("output polynomials:\n{:?}", output_polynomials);
 
