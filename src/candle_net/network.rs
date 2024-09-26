@@ -58,8 +58,12 @@ impl<'a> CandleNetwork<'a> {
             .basis_template
             .make_tensor(inputs.iter().enumerate().map(|(p, v)| (p, *v)), self.device)?;
 
+        println!("basis tensor: {}", basis);
         let result = self.coeff_tensor.inner().matmul(&basis)?;
-        let res: Vec<f32> = result.to_vec1()?;
+
+        println!("result: {}", result);
+        println!("result work: {}", result.flatten(0, 1)?);
+        let res: Vec<f32> = result.flatten(0, 1)?.to_vec1()?;
 
         Ok(res.into_iter())
     }
