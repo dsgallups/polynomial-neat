@@ -22,6 +22,7 @@ use std::hash::Hash;
 use super::expander::{Polynomial, Variable};
 
 /// a single column matrix
+#[derive(Debug)]
 pub struct BasisTemplate<T>(Vec<Vec<Variable<T>>>);
 
 impl<T> BasisTemplate<T> {

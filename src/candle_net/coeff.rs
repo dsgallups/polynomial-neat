@@ -1,8 +1,17 @@
+use std::fmt;
+
 use candle_core::{Device, Result, Tensor};
 
 use super::{basis_prime::BasisTemplate, expander::Polynomial};
 
+#[derive(Debug)]
 pub struct Coefficients(Tensor);
+
+impl fmt::Display for Coefficients {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        self.0.fmt(f)
+    }
+}
 
 impl Coefficients {
     pub fn new<T: PartialEq>(

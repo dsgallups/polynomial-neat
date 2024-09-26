@@ -13,7 +13,7 @@ use uuid::Uuid;
 mod basis_prime;
 mod coeff;
 mod expander;
-mod network;
+pub mod network;
 #[cfg(test)]
 mod scratch;
 

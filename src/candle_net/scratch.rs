@@ -126,6 +126,11 @@ fn scratch() -> Result<()> {
 
     println!("result: {}", result);
 
+    let simple_net = SimpleNetwork::from_topology(&topology);
+
+    let res = simple_net.predict(&[3.0, 2.0]).collect::<Vec<_>>();
+    println!("simple_net result: {:?}", res);
+
     Ok(())
 }
 

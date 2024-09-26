@@ -8,7 +8,7 @@ use crate::{
 };
 use candle_core::{Device, Result, Tensor};
 use fnv::FnvHashMap;
-use std::f32::consts::E;
+use std::{env::var, f32::consts::E};
 use uuid::Uuid;
 
 pub struct CandleNetwork<'a> {
@@ -25,20 +25,26 @@ impl<'a> CandleNetwork<'a> {
             .enumerate()
             .map(|(v, k)| (k, v))
             .collect();
+        println!("here 1");
 
-        let output_polynomials = get_topology_polynomials(topology)
+        let mut output_polynomials = get_topology_polynomials(topology)
             .into_iter()
-            .map(|poly| {
-                let mut new = poly.map_operands(&inputs);
-                new.sort_by_exponent(0);
-                new
-            })
+            .map(|poly| poly.map_operands(&inputs))
             .collect::<Vec<_>>();
+        output_polynomials
+            .iter_mut()
+            .for_each(|poly| poly.sort_by_exponent(0));
+        println!("output polynomials:\n{:?}", output_polynomials);
 
         let variable_basis = basis_from_poly_list(&output_polynomials);
 
-        let basis_template = BasisTemplate::new(&output_polynomials);
+        println!("variable basis: {:#?}", variable_basis);
+        let basis_template = BasisTemplate::from_raw(variable_basis);
+        println!("basis: {:?}", basis_template);
+        println!("here 4");
         let coeff_tensor = Coefficients::new(&output_polynomials, &basis_template, device)?;
+        println!("coeff: {}", coeff_tensor);
+        println!("here 5");
 
         Ok(Self {
             coeff_tensor,
@@ -60,77 +66,59 @@ impl<'a> CandleNetwork<'a> {
 }
 
 #[test]
-fn map_inputs_to_outputs() {
-    use pretty_assertions::assert_eq;
-    let i1_id = Uuid::new_v4();
-    let i2_id = Uuid::new_v4();
+fn candle_scratch() -> Result<()> {
+    let x_id = Uuid::new_v4();
+    let y_id = Uuid::new_v4();
 
-    println!("Input 1 id: {}\nInput 2 id: {}", i1_id, i2_id);
+    println!("Input 1 id: {}\nInput 2 id: {}", x_id, y_id);
 
-    let input = arc(NeuronTopology::input(i1_id));
-    let input2 = arc(NeuronTopology::input(i2_id));
+    let x_n = arc(NeuronTopology::input(x_id));
+    let y_n = arc(NeuronTopology::input(y_id));
 
-    let hidden_1 = arc(NeuronTopology::hidden(
+    let hidden_one = arc(NeuronTopology::hidden(
         Uuid::new_v4(),
         vec![
-            InputTopology::downgrade(&input, 3., 1),
-            InputTopology::downgrade(&input, 1., 2),
+            InputTopology::downgrade(&x_n, 3., 1),
+            InputTopology::downgrade(&y_n, 1., 1),
         ],
     ));
 
-    let hidden_2 = arc(NeuronTopology::hidden(
+    // (3x + y )^2 =
+    // 9x^2 + 6xy + y^2
+    let output_1 = arc(NeuronTopology::output(
         Uuid::new_v4(),
-        vec![InputTopology::downgrade(&input2, 1., 2)],
+        vec![InputTopology::downgrade(&hidden_one, 1., 2)],
     ));
 
-    let hidden_3 = arc(NeuronTopology::output(
+    // 2(3x + y)
+    //
+    // 6x + 2y
+    let output_2 = arc(NeuronTopology::output(
         Uuid::new_v4(),
-        vec![
-            InputTopology::downgrade(&hidden_1, 1., 2),
-            InputTopology::downgrade(&hidden_2, 1., 4),
-        ],
-    ));
-
-    let output = arc(NeuronTopology::output(
-        Uuid::new_v4(),
-        vec![
-            InputTopology::downgrade(&hidden_3, 1., 1),
-            InputTopology::downgrade(&hidden_3, 4., 2),
-        ],
+        vec![InputTopology::downgrade(&hidden_one, 2., 1)],
     ));
 
     let topology = NetworkTopology::from_raw_parts(
-        vec![input, input2, hidden_1, hidden_2, hidden_3, output],
+        vec![x_n, y_n, hidden_one, output_1, output_2],
         MutationChances::none(),
     );
 
-    println!("network topology ids: \n{:#?}", topology.neuron_ids());
+    let candle_net = CandleNetwork::from_topology(&topology, &Device::Cpu)?;
 
-    let output_polynomials = get_topology_polynomials(&topology);
-    let inputs: FnvHashMap<Uuid, usize> = topology
-        .neuron_ids()
-        .into_iter()
-        .enumerate()
-        .map(|(v, k)| (k, v))
-        .collect();
+    let res = candle_net.predict(&[3.0, 2.0])?.collect::<Vec<_>>();
+    println!("simple_net result: {:?}", res);
 
-    let mapped_output_polynomials: Vec<Polynomial<usize>> = output_polynomials
-        .clone()
-        .into_iter()
-        .map(|polynomial| polynomial.map_operands(&inputs))
-        .collect();
+    Ok(())
+}
+#[test]
+fn candle_scratch_two() -> Result<()> {
+    let topology = NetworkTopology::new(2, 2, MutationChances::none(), &mut rand::thread_rng());
 
-    for (o, m) in output_polynomials
-        .into_iter()
-        .zip(mapped_output_polynomials)
-    {
-        assert_eq!(o.parts().len(), m.parts().len());
-        for (op, mp) in o.parts().iter().zip(m.parts()) {
-            assert_eq!(op.weight(), mp.weight());
-            for (opo, mpo) in op.operands().iter().zip(mp.operands()) {
-                assert_eq!(opo.exponent(), mpo.exponent());
-                assert_eq!(mpo.var(), inputs.get(opo.var()).unwrap());
-            }
-        }
-    }
+    println!("here 1");
+    let candle_net = CandleNetwork::from_topology(&topology, &Device::Cpu)?;
+
+    let res = candle_net.predict(&[3.0, 2.0])?.collect::<Vec<_>>();
+    println!("simple_net result: {:?}", res);
+
+    Ok(())
 }
