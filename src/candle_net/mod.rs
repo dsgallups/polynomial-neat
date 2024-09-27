@@ -25,7 +25,7 @@ fn get_topology_polynomials(topology: &NetworkTopology) -> Vec<Polynomial<Uuid>>
 
     for output in topology.neurons().iter().filter_map(|neuron| {
         let neuron = neuron.read().unwrap();
-        println!("get_top_poly, id = {}", neuron.id());
+        //println!("get_top_poly, id = {}", neuron.id());
         if neuron.is_output() {
             Some(neuron)
         } else {
@@ -42,7 +42,7 @@ fn get_topology_polynomials(topology: &NetworkTopology) -> Vec<Polynomial<Uuid>>
 }
 
 fn create_polynomial(top: &NeuronTopology) -> Polynomial<Uuid> {
-    println!("create_polynomial, id = {}", top.id());
+    //println!("create_polynomial, id = {}", top.id());
     let Some(props) = top.props() else {
         //this is an input
         return Polynomial::unit(top.id());

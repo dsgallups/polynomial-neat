@@ -1,4 +1,4 @@
-use candle_core::{Device, MetalDevice};
+use candle_core::Device;
 use candle_neat::{
     candle_net::network::CandleNetwork, prelude::*, topology::mutation::MutationChances,
 };
@@ -33,14 +33,24 @@ fn main() {
             .collect::<Vec<_>>();
 
         println!(
-            "\nresult: {:?}\ncandle_result: {:?} network_len: ({}, {}, {})\n===END GEN ({}) ===",
-            result,
-            candle_result,
+            "network_len: ({}, {}, {})\n",
             running_network.num_nodes(),
             running_network.num_inputs(),
-            running_network.num_outputs(),
-            gen,
+            running_network.num_outputs()
         );
+        println!("\nsresult: {:?}\ncresult: {:?}", result, candle_result);
+
+        /*for (s_p, c_p) in result
+            .into_iter()
+            .zip(candle_result.into_iter())
+            .enumerate()
+        {
+            if (s_p - c_p).abs() < 0.001 {
+                panic!("difference found");
+            }
+        }*/
+
+        println!("===END GEN ({}) ===", gen);
 
         gen += 1;
         /*if gen > 1000 {

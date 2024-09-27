@@ -29,7 +29,7 @@ impl<'a> CandleNetwork<'a> {
             .enumerate()
             .map(|(v, k)| (k, v))
             .collect();
-        println!("here 1");
+        //println!("here 1");
 
         let mut output_polynomials = get_topology_polynomials(topology)
             .into_par_iter()
@@ -38,17 +38,17 @@ impl<'a> CandleNetwork<'a> {
         output_polynomials
             .par_iter_mut()
             .for_each(|poly| poly.sort_by_exponent(0));
-        println!("output polynomials:\n{:?}", output_polynomials);
+        //println!("output polynomials:\n{:?}", output_polynomials);
 
         let variable_basis = basis_from_poly_list(&output_polynomials);
 
-        println!("variable basis: {:#?}", variable_basis);
+        //println!("variable basis: {:#?}", variable_basis);
         let basis_template = BasisTemplate::from_raw(variable_basis);
-        println!("basis: {:?}", basis_template);
-        println!("here 4");
+        //println!("basis: {:?}", basis_template);
+        //println!("here 4");
         let coeff_tensor = Coefficients::new(&output_polynomials, &basis_template, device)?;
-        println!("coeff: {}", coeff_tensor);
-        println!("here 5");
+        //println!("coeff:\n{}\n\n", coeff_tensor);
+        //println!("here 5");
 
         Ok(Self {
             coeff_tensor,
@@ -62,11 +62,11 @@ impl<'a> CandleNetwork<'a> {
             .basis_template
             .make_tensor(inputs.iter().enumerate().map(|(p, v)| (p, *v)), self.device)?;
 
-        println!("basis tensor: {}", basis);
+        //println!("basis tensor:\n{}\n\n", basis);
         let result = self.coeff_tensor.inner().matmul(&basis)?;
 
-        println!("result: {}", result);
-        println!("result work: {}", result.flatten(0, 1)?);
+        //println!("result: {}", result);
+        //println!("result work: {}", result.flatten(0, 1)?);
         let res: Vec<f32> = result.flatten(0, 1)?.to_vec1()?;
 
         Ok(res.into_iter())
