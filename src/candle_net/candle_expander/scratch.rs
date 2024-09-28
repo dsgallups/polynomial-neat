@@ -9,18 +9,35 @@ use crate::{
     },
 };
 
-use super::polynomial::NewPolynomial;
+use super::polynomial::{Indeterminate, PolyComponent, Polynomial};
 
 #[derive(Clone, Copy, PartialOrd, Ord, Debug, PartialEq, Default, Eq)]
 struct X;
 
+impl<'dev> Indeterminate<'dev> for X {
+    type Variable = X;
+    fn apply_operation(
+        self,
+        device: &'dev Device,
+        weight: f32,
+        exponent: i32,
+    ) -> Polynomial<'dev, Self::Variable> {
+        let polyc = PolyComponent::simple(weight, self, exponent);
+        Polynomial::from_polycomponent(device, polyc)
+    }
+    fn identity(self, device: &'dev Device) -> Polynomial<'dev, Self::Variable> {
+        Polynomial::unit(device, self)
+    }
+}
+
 #[test]
 fn scratch() -> Result<()> {
-    let v = NewPolynomial::default()
+    let device = Device::Cpu;
+    let v = Polynomial::new(&device)
         .with_operation(1., X, 2)
         .with_operation(1., X, 1);
 
-    let h = NewPolynomial::default().with_operation(1., v, 2);
+    let h = Polynomial::new(&device).add_operation(1., v, 2);
 
     //let next =
 

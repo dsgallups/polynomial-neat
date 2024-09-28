@@ -6,6 +6,7 @@ use std::{
     ops::{Mul, MulAssign},
 };
 mod indeterminant;
+use candle_core::Device;
 pub use indeterminant::*;
 mod polycomponent;
 pub use polycomponent::*;
@@ -13,18 +14,13 @@ mod variable;
 use uuid::Uuid;
 pub use variable::*;
 
-#[derive(Debug, Clone, PartialEq)]
-pub struct NewPolynomial<T> {
+#[derive(Debug, Clone)]
+pub struct Polynomial<'a, T> {
+    device: &'a Device,
     ops: Vec<PolyComponent<T>>,
 }
 
-impl<T> Default for NewPolynomial<T> {
-    fn default() -> Self {
-        Self { ops: Vec::new() }
-    }
-}
-
-impl<T> NewPolynomial<T> {
+impl<'a, T> Polynomial<'a, T> {
     pub fn parts(&self) -> &[PolyComponent<T>] {
         &self.ops
     }
@@ -37,12 +33,16 @@ impl<T> NewPolynomial<T> {
     }
 }
 
-impl<T: Debug + Hash + Eq> NewPolynomial<T> {
-    pub fn map_operands<V: Debug + Clone, S: BuildHasher>(
+impl<'a, T: Debug + Hash + Eq> Polynomial<'a, T> {
+    pub fn map_operands<'b, V: Debug + Clone, S: BuildHasher>(
         self,
-        operands: &HashMap<T, V, S>,
-    ) -> NewPolynomial<V> {
-        NewPolynomial {
+        operands: &'b HashMap<T, V, S>,
+    ) -> Polynomial<V>
+    where
+        'a: 'b,
+    {
+        Polynomial {
+            device: self.device,
             ops: self
                 .ops
                 .into_iter()
@@ -51,22 +51,14 @@ impl<T: Debug + Hash + Eq> NewPolynomial<T> {
         }
     }
 }
-
-impl<T: Clone + PartialEq + PartialOrd + Ord + std::fmt::Debug> NewPolynomial<T> {
-    pub fn new() -> Self {
-        Self { ops: Vec::new() }
-    }
-
-    pub fn unit(var: T) -> Self {
+impl<'dev, T> Polynomial<'dev, T> {
+    pub fn new(device: &'dev Device) -> Self {
         Self {
-            ops: vec![PolyComponent::simple(1., var, 1)],
+            device,
+            ops: Vec::new(),
         }
     }
-
-    pub fn add_indeterminate<I: Indeterminate<Variable = T>>(mut self, indeterminant: I) -> Self {
-        todo!()
-    }
-    pub fn add_operation<I: Indeterminate<Variable = T>>(
+    pub fn add_operation<'other, I: Indeterminate<'other, Variable = T>>(
         mut self,
         weight: f32,
         indeterminant: I,
@@ -75,8 +67,38 @@ impl<T: Clone + PartialEq + PartialOrd + Ord + std::fmt::Debug> NewPolynomial<T>
         todo!()
     }
 
-    pub fn with_capacity(cap: usize) -> Self {
+    pub fn with_device<'new>(self, device: &'new Device) -> Polynomial<'new, T> {
+        Polynomial {
+            device,
+            ops: self.ops,
+        }
+    }
+
+    pub fn add_indeterminate<'other, I: Indeterminate<'other, Variable = T>>(
+        mut self,
+        indeterminant: I,
+    ) -> Self {
+        todo!()
+    }
+
+    pub fn from_polycomponent(device: &'dev Device, component: PolyComponent<T>) -> Self {
         Self {
+            device,
+            ops: vec![component],
+        }
+    }
+    pub fn unit(device: &'dev Device, var: T) -> Self {
+        Self {
+            device,
+            ops: vec![PolyComponent::simple(1., var, 1)],
+        }
+    }
+}
+
+impl<'a, T: Clone + PartialEq + PartialOrd + Ord + std::fmt::Debug> Polynomial<'a, T> {
+    pub fn with_capacity(device: &'a Device, cap: usize) -> Self {
+        Self {
+            device,
             ops: Vec::with_capacity(cap),
         }
     }
@@ -139,9 +161,11 @@ impl<T: Clone + PartialEq + PartialOrd + Ord + std::fmt::Debug> NewPolynomial<T>
     }
 
     /// FOIL
-    fn mul_expand(self, other: &NewPolynomial<T>) -> NewPolynomial<T> {
-        let mut result =
-            NewPolynomial::with_capacity(self.components().len().max(other.components().len()) * 2); // a guesstimate
+    fn mul_expand<'b>(self, other: &'b Polynomial<'b, T>) -> Polynomial<'a, T> {
+        let mut result = Polynomial::with_capacity(
+            self.device,
+            self.components().len().max(other.components().len()) * 2,
+        ); // a guesstimate
 
         for c1 in self.into_components() {
             for c2 in other.components() {
@@ -153,7 +177,7 @@ impl<T: Clone + PartialEq + PartialOrd + Ord + std::fmt::Debug> NewPolynomial<T>
         result
     }
 
-    pub fn expand(&mut self, other: NewPolynomial<T>, weight: f32, exponent: i32) -> &mut Self {
+    pub fn expand(&mut self, other: Polynomial<T>, weight: f32, exponent: i32) -> &mut Self {
         // important to clone here since mutating other will multiply the exponents.
 
         if exponent == 0 {
@@ -181,7 +205,7 @@ impl<T: Clone + PartialEq + PartialOrd + Ord + std::fmt::Debug> NewPolynomial<T>
     }
 }
 
-impl<T> MulAssign<f32> for NewPolynomial<T> {
+impl<'a, T> MulAssign<f32> for Polynomial<'a, T> {
     fn mul_assign(&mut self, rhs: f32) {
         self.ops.iter_mut().for_each(|item| *item *= rhs);
     }

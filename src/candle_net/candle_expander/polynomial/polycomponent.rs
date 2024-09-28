@@ -23,6 +23,25 @@ impl<T> Default for PolyComponent<T> {
 }
 
 impl<T> PolyComponent<T> {
+    pub fn new() -> Self {
+        Self {
+            weight: 0.,
+            operands: Vec::new(),
+        }
+    }
+    pub fn simple(weight: f32, var: T, exponent: i32) -> Self {
+        if exponent == 0 {
+            return Self {
+                weight,
+                operands: Vec::new(),
+            };
+        }
+
+        Self {
+            weight,
+            operands: vec![Variable::new(var, exponent)],
+        }
+    }
     pub fn weight(&self) -> f32 {
         self.weight
     }
@@ -34,6 +53,14 @@ impl<T> PolyComponent<T> {
 
     pub fn operands(&self) -> &[Variable<T>] {
         &self.operands
+    }
+    pub fn powi(mut self, exponent: i32) -> Self {
+        self.weight = self.weight.powi(exponent);
+        self.operands.iter_mut().for_each(|var| {
+            var.exponent *= exponent;
+        });
+
+        self
     }
 }
 
@@ -54,31 +81,10 @@ impl<T: Debug + Hash + Eq> PolyComponent<T> {
 }
 
 impl<T: Ord> PolyComponent<T> {
-    pub fn new() -> Self {
-        Self {
-            weight: 0.,
-            operands: Vec::new(),
-        }
-    }
-
     pub fn with_capacity(cap: usize) -> Self {
         Self {
             weight: 0.,
             operands: Vec::with_capacity(cap),
-        }
-    }
-
-    pub fn simple(weight: f32, var: T, exponent: i32) -> Self {
-        if exponent == 0 {
-            return Self {
-                weight,
-                operands: Vec::new(),
-            };
-        }
-
-        Self {
-            weight,
-            operands: vec![Variable::new(var, exponent)],
         }
     }
 
