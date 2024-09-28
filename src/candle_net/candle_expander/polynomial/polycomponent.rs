@@ -1,45 +1,48 @@
 use std::{
-    collections::HashMap,
+    collections::{BTreeMap, HashMap},
     fmt::Debug,
     hash::{BuildHasher, Hash},
     ops::{Mul, MulAssign},
 };
 
-use super::Variable;
+use fnv::FnvHashMap;
 
 #[derive(Debug, Clone, PartialEq)]
-pub struct PolyComponent<T> {
+pub struct PolyComponent {
     weight: f32,
-    pub(crate) operands: Vec<Variable<T>>,
+    pub(crate) operands: BTreeMap<usize, i32>,
 }
 
-impl<T> Default for PolyComponent<T> {
+impl Default for PolyComponent {
     fn default() -> Self {
         Self {
             weight: 0.,
-            operands: Vec::new(),
+            operands: BTreeMap::new(),
         }
     }
 }
 
-impl<T> PolyComponent<T> {
+impl PolyComponent {
     pub fn new() -> Self {
         Self {
             weight: 0.,
-            operands: Vec::new(),
+            operands: BTreeMap::new(),
         }
     }
-    pub fn simple(weight: f32, var: T, exponent: i32) -> Self {
+    pub fn simple(weight: f32, var: usize, exponent: i32) -> Self {
+        let mut btree = BTreeMap::new();
         if exponent == 0 {
             return Self {
                 weight,
-                operands: Vec::new(),
+                operands: btree,
             };
         }
 
+        btree.insert(var, exponent);
+
         Self {
             weight,
-            operands: vec![Variable::new(var, exponent)],
+            operands: btree,
         }
     }
     pub fn weight(&self) -> f32 {
@@ -51,41 +54,16 @@ impl<T> PolyComponent<T> {
         self
     }
 
-    pub fn operands(&self) -> &[Variable<T>] {
+    pub fn operands(&self) -> &BTreeMap<usize, i32> {
         &self.operands
     }
     pub fn powi(mut self, exponent: i32) -> Self {
         self.weight = self.weight.powi(exponent);
-        self.operands.iter_mut().for_each(|var| {
-            var.exponent *= exponent;
+        self.operands.iter_mut().for_each(|(i, exp)| {
+            *exp *= exponent;
         });
 
         self
-    }
-}
-
-impl<T: Debug + Hash + Eq> PolyComponent<T> {
-    pub fn map_operands<V: Clone + Debug, S: BuildHasher>(
-        self,
-        operands: &HashMap<T, V, S>,
-    ) -> PolyComponent<V> {
-        PolyComponent {
-            weight: self.weight,
-            operands: self
-                .operands
-                .into_iter()
-                .map(|var| var.map_operands(operands))
-                .collect(),
-        }
-    }
-}
-
-impl<T: Ord> PolyComponent<T> {
-    pub fn with_capacity(cap: usize) -> Self {
-        Self {
-            weight: 0.,
-            operands: Vec::with_capacity(cap),
-        }
     }
 
     pub fn with_weight(mut self, weight: f32) -> Self {
@@ -94,76 +72,90 @@ impl<T: Ord> PolyComponent<T> {
     }
 
     /// Adds the operand to the component. Simplifies if the operand already exists and sorts.
-    pub fn with_operand(mut self, var: T, exponent: i32) -> Self {
+    pub fn with_operand(mut self, variable: usize, exponent: i32) -> Self {
         if exponent == 0 {
             return self;
         }
 
-        match self.operands.iter_mut().find(|op| op.var == var) {
-            Some(op) => {
-                op.exponent += exponent;
+        let remove = match self.operands.iter_mut().find(|(var, _)| var == var) {
+            Some((var, exp)) => {
+                *exp += exponent;
+                if *exp == 0 {
+                    Some(*var)
+                } else {
+                    None
+                }
             }
             None => {
-                self.operands.push(Variable { var, exponent });
-                self.operands.sort();
+                self.operands.insert(variable, exponent);
                 return self;
             }
+        };
+        if let Some(key) = remove {
+            self.operands.remove(&key);
         }
 
-        self.operands.retain(|op| op.exponent != 0);
         self
     }
 
     pub fn base(weight: f32) -> Self {
         Self {
             weight,
-            operands: Vec::new(),
+            operands: BTreeMap::new(),
         }
     }
 
     /// Note: does not simplify duplicates. use `with_operand` for this behavior.
-    pub fn from_raw_parts(weight: f32, mut operands: Vec<Variable<T>>) -> Self {
-        operands.sort();
-
+    pub fn from_raw_parts(weight: f32, operands: BTreeMap<usize, i32>) -> Self {
         Self { weight, operands }
-    }
-
-    pub fn sort(&mut self) {
-        self.operands.sort();
     }
 }
 
 // should work the same way as 4x^0 is handled.
 // this is just efficient.
-impl<T> MulAssign<f32> for PolyComponent<T> {
+impl MulAssign<f32> for PolyComponent {
     fn mul_assign(&mut self, rhs: f32) {
         self.weight *= rhs;
     }
 }
-impl<T: PartialEq> MulAssign for PolyComponent<T> {
+impl MulAssign for PolyComponent {
     fn mul_assign(&mut self, rhs: Self) {
         self.weight *= rhs.weight;
-        for operand in rhs.operands {
-            match self.operands.iter_mut().find(|op| op.var == operand.var) {
-                Some(op) => {
-                    op.exponent += operand.exponent;
+        for (rhs_var, rhs_exp) in rhs.operands {
+            let remove = match self.operands.get_mut(&rhs_var) {
+                Some(exp) => {
+                    *exp += rhs_exp;
+                    *exp == 0
                 }
-                None => self.operands.push(operand),
+                None => {
+                    self.operands.insert(rhs_var, rhs_exp);
+                    false
+                }
+            };
+            if remove {
+                self.operands.remove(&rhs_var);
             }
         }
     }
 }
 
-impl<T: PartialEq> Mul for PolyComponent<T> {
-    type Output = PolyComponent<T>;
+impl Mul for PolyComponent {
+    type Output = PolyComponent;
     fn mul(self, rhs: Self) -> Self::Output {
         let mut new_ops = self.operands;
-        for operand in rhs.operands {
-            match new_ops.iter_mut().find(|op| op.var == operand.var) {
-                Some(op) => {
-                    op.exponent += operand.exponent;
+        for (rhs_var, rhs_exp) in rhs.operands {
+            let remove = match new_ops.get_mut(&rhs_var) {
+                Some(exp) => {
+                    *exp += rhs_exp;
+                    *exp == 0
                 }
-                None => new_ops.push(operand),
+                None => {
+                    new_ops.insert(rhs_var, rhs_exp);
+                    false
+                }
+            };
+            if remove {
+                new_ops.remove(&rhs_var);
             }
         }
         PolyComponent {
