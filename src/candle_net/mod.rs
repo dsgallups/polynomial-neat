@@ -11,6 +11,7 @@ use fnv::FnvHashMap;
 use network::CandleNetwork;
 use uuid::Uuid;
 mod basis_prime;
+pub mod candle_expander;
 mod coeff;
 mod expander;
 pub mod network;
