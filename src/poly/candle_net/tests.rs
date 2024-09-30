@@ -1,5 +1,5 @@
 use super::{create_polynomial, expander::Polynomial, get_topology_polynomials, CandleNetwork};
-use crate::{candle_net::expander::PolyComponent, prelude::*};
+use crate::poly::{candle_net::expander::PolyComponent, prelude::*};
 use candle_core::{Device, Result, Tensor};
 use fnv::FnvHashMap;
 use pretty_assertions::assert_eq;

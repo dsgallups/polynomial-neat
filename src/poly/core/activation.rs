@@ -11,6 +11,6 @@ impl Bias {
 pub struct Exponent;
 impl Exponent {
     pub fn rand(rng: &mut impl Rng) -> i32 {
-        rng.gen_range(-1..=3)
+        rng.gen_range(0..=1)
     }
 }

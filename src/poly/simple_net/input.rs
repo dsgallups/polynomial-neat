@@ -1,6 +1,6 @@
 use std::sync::{Arc, RwLock};
 
-use crate::prelude::*;
+use crate::poly::prelude::*;
 
 pub type NeuronInput = Input<Arc<RwLock<SimpleNeuron>>>;
 

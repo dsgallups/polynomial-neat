@@ -2,7 +2,7 @@ use std::sync::{RwLock, Weak};
 
 use rand::Rng;
 
-use crate::prelude::*;
+use crate::poly::prelude::*;
 
 pub type NeuronPropsTopology = Props<Weak<RwLock<NeuronTopology>>>;
 

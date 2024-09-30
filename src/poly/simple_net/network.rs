@@ -2,7 +2,7 @@ use std::sync::{Arc, RwLock};
 
 use rayon::iter::{IndexedParallelIterator as _, IntoParallelRefIterator, ParallelIterator as _};
 
-use crate::prelude::*;
+use crate::poly::prelude::*;
 
 pub struct SimpleNetwork {
     // contains all neurons
@@ -23,7 +23,9 @@ impl SimpleNetwork {
         });
         inputs.par_iter().enumerate().for_each(|(index, value)| {
             let Some(nw) = self.input_layer.get(index) else {
-                panic!("couldn't flush i {}", index);
+                //sim
+                return;
+                //panic!("couldn't flush i {}", index);
             };
             let mut nw = nw.write().unwrap();
             nw.override_state(*value);

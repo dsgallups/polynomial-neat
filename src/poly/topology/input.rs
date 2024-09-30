@@ -1,6 +1,6 @@
 use std::sync::{Arc, RwLock, Weak};
 
-use crate::prelude::*;
+use crate::poly::prelude::*;
 
 pub type InputTopology = Input<Weak<RwLock<NeuronTopology>>>;
 

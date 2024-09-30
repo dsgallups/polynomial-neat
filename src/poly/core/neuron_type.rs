@@ -1,6 +1,6 @@
 use std::fmt;
 
-use crate::prelude::*;
+use crate::poly::prelude::*;
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum NeuronType {

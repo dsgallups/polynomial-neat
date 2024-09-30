@@ -7,7 +7,7 @@ use rand::Rng;
 use tracing::info;
 use uuid::Uuid;
 
-use crate::prelude::*;
+use crate::poly::prelude::*;
 
 #[derive(Clone, Debug)]
 pub struct NetworkTopology {
@@ -442,7 +442,7 @@ impl NetworkTopology {
             }
         }
 
-        info!("Num removed: {}", num_removed);
+        //info!("Num removed: {}", num_removed);
         /*
         neuron.write().unwrap().trim_inputs(to_remove);*/
     }
