@@ -77,22 +77,18 @@ impl PolyComponent {
             return self;
         }
 
-        let remove = match self.operands.iter_mut().find(|(var, _)| var == var) {
-            Some((var, exp)) => {
+        let mut remove = false;
+        self.operands
+            .entry(variable)
+            .and_modify(|exp| {
                 *exp += exponent;
                 if *exp == 0 {
-                    Some(*var)
-                } else {
-                    None
+                    remove = true
                 }
-            }
-            None => {
-                self.operands.insert(variable, exponent);
-                return self;
-            }
-        };
-        if let Some(key) = remove {
-            self.operands.remove(&key);
+            })
+            .or_insert(exponent);
+        if remove {
+            self.operands.remove(&variable);
         }
 
         self

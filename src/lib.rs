@@ -13,6 +13,7 @@ pub mod prelude {
     pub use super::simple_net::{
         input::NeuronInput, network::SimpleNetwork, neuron::SimpleNeuron, neuron_type::NeuronProps,
     };
+    #[cfg(test)]
     pub(crate) use super::test_utils::arc;
     pub use super::topology::{
         input::InputTopology,

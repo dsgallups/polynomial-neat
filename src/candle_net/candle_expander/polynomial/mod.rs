@@ -12,6 +12,26 @@ mod polycomponent;
 pub use polycomponent::*;
 use uuid::Uuid;
 
+/*
+
+#[doc = r#"
+
+n = number of additive operations
+v = number of considered variables
+"#]
+#[derive(Debug, Clone)]
+pub struct Polynomial<'a> {
+    device: &'a Device,
+    // 1xv matrix
+    // type u32.
+    var_order: Tensor,
+    // nx1 matrix, type f32
+    coef: Tensor,
+    // nx1xv matrix, type i32
+    exponents: Tensor,
+}
+*/
+
 #[derive(Debug, Clone)]
 pub struct Polynomial<'a> {
     device: &'a Device,
