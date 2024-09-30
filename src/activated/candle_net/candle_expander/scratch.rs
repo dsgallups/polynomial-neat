@@ -2,7 +2,7 @@ use candle_core::{DType, Device, Result, Tensor};
 use fnv::FnvHashMap;
 use uuid::Uuid;
 
-use crate::poly::{
+use crate::activated::{
     candle_net::{basis_prime::BasisTemplate, coeff::Coefficients, get_topology_polynomials},
     prelude::{
         arc, MutationChances, PolyInputTopology, PolyNetworkTopology, PolyNeuronTopology,

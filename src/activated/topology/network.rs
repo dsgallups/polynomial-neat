@@ -7,7 +7,7 @@ use rand::Rng;
 use tracing::info;
 use uuid::Uuid;
 
-use crate::poly::prelude::*;
+use crate::activated::prelude::*;
 
 #[derive(Clone, Debug)]
 pub struct PolyNetworkTopology {

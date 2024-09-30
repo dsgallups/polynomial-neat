@@ -1,4 +1,4 @@
-use crate::poly::prelude::*;
+use crate::activated::prelude::*;
 
 pub struct PolyNeuronInner<N, I> {
     pub(crate) inner: N,

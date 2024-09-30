@@ -2,7 +2,7 @@ use std::sync::{Arc, RwLock};
 
 use uuid::Uuid;
 
-use crate::poly::prelude::*;
+use crate::activated::prelude::*;
 
 #[derive(Clone, Debug)]
 pub struct PolyNeuronTopology {

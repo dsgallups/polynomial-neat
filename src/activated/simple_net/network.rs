@@ -2,7 +2,7 @@ use std::sync::{Arc, RwLock};
 
 use rayon::iter::{IndexedParallelIterator as _, IntoParallelRefIterator, ParallelIterator as _};
 
-use crate::poly::prelude::*;
+use crate::activated::prelude::*;
 
 pub struct SimplePolyNetwork {
     // contains all neurons
