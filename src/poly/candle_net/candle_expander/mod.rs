@@ -2,9 +2,9 @@
 mod scratch;
 use candle_core::Tensor;
 mod polynomial;
-use super::NeuronTopology;
+use super::PolyNeuronTopology;
 
-fn create_candle_poly(top: &NeuronTopology) -> Tensor {
+fn create_candle_poly(top: &PolyNeuronTopology) -> Tensor {
     todo!();
 }
 

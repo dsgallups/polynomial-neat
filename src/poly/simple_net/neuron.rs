@@ -6,7 +6,7 @@ use uuid::Uuid;
 
 pub struct SimpleNeuron {
     id: Uuid,
-    props: Option<Props<Arc<RwLock<SimpleNeuron>>>>,
+    props: Option<PolyProps<Arc<RwLock<SimpleNeuron>>>>,
     /// some working value, returned by the result of the activation value.
     activated_value: Option<f32>,
 }

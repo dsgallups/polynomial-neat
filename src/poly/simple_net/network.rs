@@ -4,7 +4,7 @@ use rayon::iter::{IndexedParallelIterator as _, IntoParallelRefIterator, Paralle
 
 use crate::poly::prelude::*;
 
-pub struct SimpleNetwork {
+pub struct SimplePolyNetwork {
     // contains all neurons
     neurons: Vec<Arc<RwLock<SimpleNeuron>>>,
     // contains the input neurons. cloned arc of neurons in neurons
@@ -13,7 +13,7 @@ pub struct SimpleNetwork {
     output_layer: Vec<Arc<RwLock<SimpleNeuron>>>,
 }
 
-impl SimpleNetwork {
+impl SimplePolyNetwork {
     /// Flushes the previous state of the network and calculates given new inputs.
     pub fn predict(&self, inputs: &[f32]) -> impl Iterator<Item = f32> {
         // reset all states first
@@ -188,7 +188,7 @@ impl SimpleNetwork {
         str
     }
 
-    pub fn from_topology(topology: &NetworkTopology) -> Self {
+    pub fn from_topology(topology: &PolyNetworkTopology) -> Self {
         let mut neurons: Vec<Arc<RwLock<SimpleNeuron>>> =
             Vec::with_capacity(topology.neurons().len());
         let mut input_layer: Vec<Arc<RwLock<SimpleNeuron>>> = Vec::new();
@@ -213,6 +213,6 @@ impl SimpleNetwork {
             }
         }
 
-        SimpleNetwork::from_raw_parts(neurons, input_layer, output_layer)
+        SimplePolyNetwork::from_raw_parts(neurons, input_layer, output_layer)
     }
 }

@@ -8,17 +8,18 @@ use uuid::Uuid;
 pub fn simple_network() {
     let input_id = Uuid::new_v4();
 
-    let input = arc(NeuronTopology::input(input_id));
+    let input = arc(PolyNeuronTopology::input(input_id));
 
-    let output = arc(NeuronTopology::output(
+    let output = arc(PolyNeuronTopology::output(
         Uuid::new_v4(),
         vec![
-            InputTopology::downgrade(&input, 1., 1),
-            InputTopology::downgrade(&input, 1., 1),
+            PolyInputTopology::downgrade(&input, 1., 1),
+            PolyInputTopology::downgrade(&input, 1., 1),
         ],
     ));
 
-    let topology = NetworkTopology::from_raw_parts(vec![input, output], MutationChances::none());
+    let topology =
+        PolyNetworkTopology::from_raw_parts(vec![input, output], MutationChances::none());
 
     let polynomials = get_topology_polynomials(&topology);
 
@@ -35,32 +36,32 @@ pub fn two_input_network() -> Result<()> {
     println!("Input 1 id: {}\nInput 2 id: {}", x, y);
 
     // x
-    let input = arc(NeuronTopology::input(x));
+    let input = arc(PolyNeuronTopology::input(x));
     // y
-    let input2 = arc(NeuronTopology::input(y));
+    let input2 = arc(PolyNeuronTopology::input(y));
 
     // 3x + x^2
-    let hidden_1 = arc(NeuronTopology::hidden(
+    let hidden_1 = arc(PolyNeuronTopology::hidden(
         Uuid::new_v4(),
         vec![
-            InputTopology::downgrade(&input, 3., 1),
-            InputTopology::downgrade(&input, 1., 2),
+            PolyInputTopology::downgrade(&input, 3., 1),
+            PolyInputTopology::downgrade(&input, 1., 2),
         ],
     ));
 
     // y^2
-    let hidden_2 = arc(NeuronTopology::hidden(
+    let hidden_2 = arc(PolyNeuronTopology::hidden(
         Uuid::new_v4(),
-        vec![InputTopology::downgrade(&input2, 1., 2)],
+        vec![PolyInputTopology::downgrade(&input2, 1., 2)],
     ));
 
     // (3x + x^2)^2 + (y^2)^4
     //  x^4 + 6x^3 + 9x^2 + y^8
-    let hidden_3 = arc(NeuronTopology::output(
+    let hidden_3 = arc(PolyNeuronTopology::output(
         Uuid::new_v4(),
         vec![
-            InputTopology::downgrade(&hidden_1, 1., 2),
-            InputTopology::downgrade(&hidden_2, 1., 4),
+            PolyInputTopology::downgrade(&hidden_1, 1., 2),
+            PolyInputTopology::downgrade(&hidden_2, 1., 4),
         ],
     ));
 
@@ -68,15 +69,15 @@ pub fn two_input_network() -> Result<()> {
     //
     // 4x^8 + 48x^7 + 216x^6 + 432x^5 + 8x^4y^8 + 325x^4 + 48x^3y^8 +
     //  6x^3 + 72x^2y^8 + 9x^2 + 4y^16 + y^8
-    let output = arc(NeuronTopology::output(
+    let output = arc(PolyNeuronTopology::output(
         Uuid::new_v4(),
         vec![
-            InputTopology::downgrade(&hidden_3, 1., 1),
-            InputTopology::downgrade(&hidden_3, 4., 2),
+            PolyInputTopology::downgrade(&hidden_3, 1., 1),
+            PolyInputTopology::downgrade(&hidden_3, 4., 2),
         ],
     ));
 
-    let topology = NetworkTopology::from_raw_parts(
+    let topology = PolyNetworkTopology::from_raw_parts(
         vec![input, hidden_1, hidden_2, output],
         MutationChances::none(),
     );
@@ -113,39 +114,39 @@ fn map_inputs_to_outputs() {
 
     println!("Input 1 id: {}\nInput 2 id: {}", i1_id, i2_id);
 
-    let input = arc(NeuronTopology::input(i1_id));
-    let input2 = arc(NeuronTopology::input(i2_id));
+    let input = arc(PolyNeuronTopology::input(i1_id));
+    let input2 = arc(PolyNeuronTopology::input(i2_id));
 
-    let hidden_1 = arc(NeuronTopology::hidden(
+    let hidden_1 = arc(PolyNeuronTopology::hidden(
         Uuid::new_v4(),
         vec![
-            InputTopology::downgrade(&input, 3., 1),
-            InputTopology::downgrade(&input, 1., 2),
+            PolyInputTopology::downgrade(&input, 3., 1),
+            PolyInputTopology::downgrade(&input, 1., 2),
         ],
     ));
 
-    let hidden_2 = arc(NeuronTopology::hidden(
+    let hidden_2 = arc(PolyNeuronTopology::hidden(
         Uuid::new_v4(),
-        vec![InputTopology::downgrade(&input2, 1., 2)],
+        vec![PolyInputTopology::downgrade(&input2, 1., 2)],
     ));
 
-    let hidden_3 = arc(NeuronTopology::output(
+    let hidden_3 = arc(PolyNeuronTopology::output(
         Uuid::new_v4(),
         vec![
-            InputTopology::downgrade(&hidden_1, 1., 2),
-            InputTopology::downgrade(&hidden_2, 1., 4),
+            PolyInputTopology::downgrade(&hidden_1, 1., 2),
+            PolyInputTopology::downgrade(&hidden_2, 1., 4),
         ],
     ));
 
-    let output = arc(NeuronTopology::output(
+    let output = arc(PolyNeuronTopology::output(
         Uuid::new_v4(),
         vec![
-            InputTopology::downgrade(&hidden_3, 1., 1),
-            InputTopology::downgrade(&hidden_3, 4., 2),
+            PolyInputTopology::downgrade(&hidden_3, 1., 1),
+            PolyInputTopology::downgrade(&hidden_3, 4., 2),
         ],
     ));
 
-    let topology = NetworkTopology::from_raw_parts(
+    let topology = PolyNetworkTopology::from_raw_parts(
         vec![input, input2, hidden_1, hidden_2, hidden_3, output],
         MutationChances::none(),
     );

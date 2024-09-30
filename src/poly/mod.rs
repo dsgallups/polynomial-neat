@@ -5,19 +5,20 @@ pub mod topology;
 pub mod prelude {
     pub use super::core::{
         activation::{Bias, Exponent},
-        input::Input,
-        neuron::NeuronInner,
-        neuron_type::{NeuronType, Props, PropsType},
+        input::PolyInput,
+        neuron::PolyNeuronInner,
+        neuron_type::{NeuronType, PolyProps, PropsType},
     };
     pub use super::simple_net::{
-        input::NeuronInput, network::SimpleNetwork, neuron::SimpleNeuron, neuron_type::NeuronProps,
+        input::NeuronInput, network::SimplePolyNetwork, neuron::SimpleNeuron,
+        neuron_type::NeuronProps,
     };
     pub use super::topology::{
-        input::InputTopology,
+        input::PolyInputTopology,
         mutation::{MutationAction, MutationChances, MAX_MUTATIONS},
-        network::NetworkTopology,
-        neuron::NeuronTopology,
-        neuron_type::NeuronPropsTopology,
+        network::PolyNetworkTopology,
+        neuron::PolyNeuronTopology,
+        neuron_type::PolyNeuronPropsTopology,
     };
     #[cfg(test)]
     pub(crate) use crate::test_utils::arc;

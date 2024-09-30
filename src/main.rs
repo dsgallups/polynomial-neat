@@ -7,7 +7,7 @@ fn main() {
     let mutation_chances = MutationChances::new_from_raw(3, 80., 50., 5., 60., 20.);
 
     let mut running_topology =
-        NetworkTopology::new(2, 20, mutation_chances, &mut rand::thread_rng());
+        PolyNetworkTopology::new(2, 20, mutation_chances, &mut rand::thread_rng());
 
     let dev = Device::new_metal(0).unwrap();
     let mut gen = 0;

@@ -5,47 +5,47 @@ use uuid::Uuid;
 use crate::poly::prelude::*;
 
 #[derive(Clone, Debug)]
-pub struct NeuronTopology {
+pub struct PolyNeuronTopology {
     id: Uuid,
-    neuron_props: Option<NeuronPropsTopology>,
+    neuron_props: Option<PolyNeuronPropsTopology>,
 }
 
-impl NeuronTopology {
+impl PolyNeuronTopology {
     pub fn input(id: Uuid) -> Self {
         Self {
             id,
             neuron_props: None,
         }
     }
-    pub fn hidden(id: Uuid, inputs: Vec<InputTopology>) -> Self {
-        let neuron_type = NeuronPropsTopology::hidden(inputs);
+    pub fn hidden(id: Uuid, inputs: Vec<PolyInputTopology>) -> Self {
+        let neuron_type = PolyNeuronPropsTopology::hidden(inputs);
         Self::new(id, Some(neuron_type))
     }
 
-    pub fn output(id: Uuid, inputs: Vec<InputTopology>) -> Self {
-        let neuron_props = NeuronPropsTopology::output(inputs);
+    pub fn output(id: Uuid, inputs: Vec<PolyInputTopology>) -> Self {
+        let neuron_props = PolyNeuronPropsTopology::output(inputs);
 
         Self::new(id, Some(neuron_props))
     }
 
-    pub fn new(id: Uuid, neuron_props: Option<NeuronPropsTopology>) -> Self {
+    pub fn new(id: Uuid, neuron_props: Option<PolyNeuronPropsTopology>) -> Self {
         Self { id, neuron_props }
     }
 
-    pub fn new_arc(id: Uuid, neuron_props: Option<NeuronPropsTopology>) -> Arc<RwLock<Self>> {
+    pub fn new_arc(id: Uuid, neuron_props: Option<PolyNeuronPropsTopology>) -> Arc<RwLock<Self>> {
         Arc::new(RwLock::new(Self { id, neuron_props }))
     }
 
-    pub fn props(&self) -> Option<&NeuronPropsTopology> {
+    pub fn props(&self) -> Option<&PolyNeuronPropsTopology> {
         self.neuron_props.as_ref()
     }
-    pub fn props_mut(&mut self) -> Option<&mut NeuronPropsTopology> {
+    pub fn props_mut(&mut self) -> Option<&mut PolyNeuronPropsTopology> {
         self.neuron_props.as_mut()
     }
 
     /// Note that inputs are reset here.
     pub fn deep_clone(&self) -> Self {
-        NeuronTopology {
+        PolyNeuronTopology {
             id: Uuid::new_v4(),
             neuron_props: self.neuron_props.as_ref().map(|props| props.deep_clone()),
         }

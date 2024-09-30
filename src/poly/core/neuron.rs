@@ -1,20 +1,20 @@
 use crate::poly::prelude::*;
 
-pub struct NeuronInner<N, I> {
+pub struct PolyNeuronInner<N, I> {
     pub(crate) inner: N,
-    props: Option<Props<I>>,
+    props: Option<PolyProps<I>>,
 }
 
-impl<N, I> NeuronInner<N, I> {
-    pub fn new(inner: N, props: Option<Props<I>>) -> Self {
+impl<N, I> PolyNeuronInner<N, I> {
+    pub fn new(inner: N, props: Option<PolyProps<I>>) -> Self {
         Self { inner, props }
     }
 
-    pub fn inputs(&self) -> Option<&[Input<I>]> {
+    pub fn inputs(&self) -> Option<&[PolyInput<I>]> {
         self.props.as_ref().map(|props| props.inputs())
     }
 
-    pub fn props(&self) -> Option<&Props<I>> {
+    pub fn props(&self) -> Option<&PolyProps<I>> {
         self.props.as_ref()
     }
 
@@ -46,13 +46,13 @@ where
     N: 'a,
     I: 'a,
 {
-    fn inner(&self) -> &NeuronInner<N, I>;
+    fn inner(&self) -> &PolyNeuronInner<N, I>;
 
-    fn inputs(&'a self) -> Option<&[Input<I>]> {
+    fn inputs(&'a self) -> Option<&[PolyInput<I>]> {
         self.inner().inputs()
     }
 
-    fn props(&'a self) -> Option<&Props<I>> {
+    fn props(&'a self) -> Option<&PolyProps<I>> {
         self.inner().props()
     }
 

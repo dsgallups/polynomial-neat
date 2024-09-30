@@ -21,7 +21,7 @@ mod scratch;
 #[cfg(test)]
 mod tests;
 
-fn get_topology_polynomials(topology: &NetworkTopology) -> Vec<Polynomial<Uuid>> {
+fn get_topology_polynomials(topology: &PolyNetworkTopology) -> Vec<Polynomial<Uuid>> {
     let mut neurons = Vec::with_capacity(topology.neurons().len());
 
     for output in topology.neurons().iter().filter_map(|neuron| {
@@ -42,7 +42,7 @@ fn get_topology_polynomials(topology: &NetworkTopology) -> Vec<Polynomial<Uuid>>
     neurons
 }
 
-fn create_polynomial(top: &NeuronTopology) -> Polynomial<Uuid> {
+fn create_polynomial(top: &PolyNeuronTopology) -> Polynomial<Uuid> {
     //println!("create_polynomial, id = {}", top.id());
     let Some(props) = top.props() else {
         //this is an input

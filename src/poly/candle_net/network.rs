@@ -22,7 +22,7 @@ pub struct CandleNetwork<'a> {
 }
 
 impl<'a> CandleNetwork<'a> {
-    pub fn from_topology(topology: &NetworkTopology, device: &'a Device) -> Result<Self> {
+    pub fn from_topology(topology: &PolyNetworkTopology, device: &'a Device) -> Result<Self> {
         let inputs: FnvHashMap<Uuid, usize> = topology
             .neuron_ids()
             .into_iter()
@@ -80,33 +80,33 @@ fn candle_scratch() -> Result<()> {
 
     println!("Input 1 id: {}\nInput 2 id: {}", x_id, y_id);
 
-    let x_n = arc(NeuronTopology::input(x_id));
-    let y_n = arc(NeuronTopology::input(y_id));
+    let x_n = arc(PolyNeuronTopology::input(x_id));
+    let y_n = arc(PolyNeuronTopology::input(y_id));
 
-    let hidden_one = arc(NeuronTopology::hidden(
+    let hidden_one = arc(PolyNeuronTopology::hidden(
         Uuid::new_v4(),
         vec![
-            InputTopology::downgrade(&x_n, 3., 1),
-            InputTopology::downgrade(&y_n, 1., 1),
+            PolyInputTopology::downgrade(&x_n, 3., 1),
+            PolyInputTopology::downgrade(&y_n, 1., 1),
         ],
     ));
 
     // (3x + y )^2 =
     // 9x^2 + 6xy + y^2
-    let output_1 = arc(NeuronTopology::output(
+    let output_1 = arc(PolyNeuronTopology::output(
         Uuid::new_v4(),
-        vec![InputTopology::downgrade(&hidden_one, 1., 2)],
+        vec![PolyInputTopology::downgrade(&hidden_one, 1., 2)],
     ));
 
     // 2(3x + y)
     //
     // 6x + 2y
-    let output_2 = arc(NeuronTopology::output(
+    let output_2 = arc(PolyNeuronTopology::output(
         Uuid::new_v4(),
-        vec![InputTopology::downgrade(&hidden_one, 2., 1)],
+        vec![PolyInputTopology::downgrade(&hidden_one, 2., 1)],
     ));
 
-    let topology = NetworkTopology::from_raw_parts(
+    let topology = PolyNetworkTopology::from_raw_parts(
         vec![x_n, y_n, hidden_one, output_1, output_2],
         MutationChances::none(),
     );
@@ -120,7 +120,7 @@ fn candle_scratch() -> Result<()> {
 }
 #[test]
 fn candle_scratch_two() -> Result<()> {
-    let topology = NetworkTopology::new(2, 2, MutationChances::none(), &mut rand::thread_rng());
+    let topology = PolyNetworkTopology::new(2, 2, MutationChances::none(), &mut rand::thread_rng());
 
     println!("here 1");
     let candle_net = CandleNetwork::from_topology(&topology, &Device::Cpu)?;

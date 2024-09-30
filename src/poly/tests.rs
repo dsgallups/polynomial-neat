@@ -3,7 +3,7 @@ use std::collections::HashSet;
 use crate::poly::{candle_net::network::CandleNetwork, prelude::*};
 fn _test_dupes() {
     let mutation_chances = MutationChances::new_from_raw(3, 80., 50., 5., 60., 20.);
-    let mut top_1 = NetworkTopology::new(20, 20, mutation_chances, &mut rand::thread_rng());
+    let mut top_1 = PolyNetworkTopology::new(20, 20, mutation_chances, &mut rand::thread_rng());
 
     let mut top_2 = top_1.deep_clone();
 
@@ -25,7 +25,7 @@ fn test_two() {
     let mutation_chances = MutationChances::new_from_raw(3, 80., 50., 5., 60., 20.);
 
     let mut running_topology =
-        NetworkTopology::new(2, 2, mutation_chances, &mut rand::thread_rng());
+        PolyNetworkTopology::new(2, 2, mutation_chances, &mut rand::thread_rng());
 
     let mut gen = 0;
     println!("here");
@@ -75,7 +75,7 @@ fn _test_inf() {
     let mutation_chances = MutationChances::new_from_raw(3, 80., 50., 5., 60., 20.);
 
     let mut running_topology =
-        NetworkTopology::new(2, 2, mutation_chances, &mut rand::thread_rng());
+        PolyNetworkTopology::new(2, 2, mutation_chances, &mut rand::thread_rng());
 
     #[allow(unused_assignments)]
     let mut running_network = running_topology.to_simple_network();

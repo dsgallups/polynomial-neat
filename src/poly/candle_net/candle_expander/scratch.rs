@@ -5,7 +5,8 @@ use uuid::Uuid;
 use crate::poly::{
     candle_net::{basis_prime::BasisTemplate, coeff::Coefficients, get_topology_polynomials},
     prelude::{
-        arc, InputTopology, MutationChances, NetworkTopology, NeuronTopology, SimpleNetwork,
+        arc, MutationChances, PolyInputTopology, PolyNetworkTopology, PolyNeuronTopology,
+        SimplePolyNetwork,
     },
 };
 

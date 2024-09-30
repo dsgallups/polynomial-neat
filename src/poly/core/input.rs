@@ -2,13 +2,13 @@ use rand::Rng;
 
 /// Defines a weight and a reference to an input
 #[derive(Clone, Debug)]
-pub struct Input<I> {
+pub struct PolyInput<I> {
     input: I,
     weight: f32,
     exp: i32,
 }
 
-impl<I> Input<I> {
+impl<I> PolyInput<I> {
     pub fn new(input: I, weight: f32, exp: i32) -> Self {
         Self { input, weight, exp }
     }
