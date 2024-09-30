@@ -1,4 +1,4 @@
-use crate::activated::candle_net::expander::Variable;
+use crate::poly::candle_net::expander::Variable;
 
 use super::{PolyComponent, Polynomial};
 use pretty_assertions::{assert_eq, assert_ne};

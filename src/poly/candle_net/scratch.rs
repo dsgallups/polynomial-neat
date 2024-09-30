@@ -1,7 +1,7 @@
 use std::marker::PhantomData;
 
 use super::{expander::Polynomial, CandleNetwork};
-use crate::activated::{
+use crate::poly::{
     candle_net::{
         basis_prime::BasisTemplate, coeff::Coefficients, expander::Variable,
         get_topology_polynomials,

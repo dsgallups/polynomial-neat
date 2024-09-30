@@ -1,6 +1,6 @@
 use std::collections::HashSet;
 
-use crate::activated::{candle_net::network::CandleNetwork, prelude::*};
+use crate::poly::{candle_net::network::CandleNetwork, prelude::*};
 fn _test_dupes() {
     let mutation_chances = MutationChances::new_from_raw(3, 80., 50., 5., 60., 20.);
     let mut top_1 = PolyNetworkTopology::new(20, 20, mutation_chances, &mut rand::thread_rng());
@@ -21,7 +21,7 @@ fn _test_dupes() {
 
 #[test]
 fn test_two() {
-    use crate::{activated::prelude::*, activated::topology::mutation::MutationChances};
+    use crate::{poly::prelude::*, poly::topology::mutation::MutationChances};
     let mutation_chances = MutationChances::new_from_raw(3, 80., 50., 5., 60., 20.);
 
     let mut running_topology =
@@ -65,7 +65,7 @@ fn test_two() {
 }
 
 fn _test_inf() {
-    use crate::{activated::prelude::*, activated::topology::mutation::MutationChances};
+    use crate::{poly::prelude::*, poly::topology::mutation::MutationChances};
     use tracing::info;
     tracing_subscriber::fmt()
         .with_max_level(tracing::Level::INFO)

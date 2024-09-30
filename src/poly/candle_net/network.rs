@@ -1,5 +1,5 @@
 use super::{basis_prime::BasisTemplate, coeff::Coefficients, get_topology_polynomials};
-use crate::activated::{
+use crate::poly::{
     candle_net::{
         basis_prime::basis_from_poly_list,
         expander::{Polynomial, Variable},

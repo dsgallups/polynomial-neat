@@ -1,5 +1,5 @@
 use candle_core::Device;
-use candle_neat::activated::{
+use candle_neat::poly::{
     candle_net::network::CandleNetwork, prelude::*, topology::mutation::MutationChances,
 };
 

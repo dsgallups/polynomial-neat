@@ -2,7 +2,7 @@ use std::sync::{Arc, RwLock};
 
 use rayon::iter::{IndexedParallelIterator as _, IntoParallelRefIterator, ParallelIterator as _};
 
-use crate::activated::prelude::*;
+use crate::poly::prelude::*;
 
 pub struct SimplePolyNetwork {
     // contains all neurons
@@ -188,7 +188,7 @@ impl SimplePolyNetwork {
         str
     }
 
-    pub fn from_topology(topology: &NetworkTopology) -> Self {
+    pub fn from_topology(topology: &PolyNetworkTopology) -> Self {
         let mut neurons: Vec<Arc<RwLock<SimpleNeuron>>> =
             Vec::with_capacity(topology.neurons().len());
         let mut input_layer: Vec<Arc<RwLock<SimpleNeuron>>> = Vec::new();

@@ -1,3 +1,4 @@
+pub mod candle_net;
 pub mod core;
 pub mod simple_net;
 pub mod topology;
@@ -13,12 +14,15 @@ pub mod prelude {
         neuron_type::NeuronProps,
     };
     pub use super::topology::{
-        input::InputTopology,
+        input::PolyInputTopology,
         mutation::{MutationAction, MutationChances, MAX_MUTATIONS},
-        network::NetworkTopology,
-        neuron::NeuronTopology,
-        neuron_type::NeuronPropsTopology,
+        network::PolyNetworkTopology,
+        neuron::PolyNeuronTopology,
+        neuron_type::PolyNeuronPropsTopology,
     };
     #[cfg(test)]
     pub(crate) use crate::test_utils::arc;
 }
+
+#[cfg(test)]
+mod tests;

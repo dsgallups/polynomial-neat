@@ -4,7 +4,7 @@
 #![allow(unused_variables)]
 use std::sync::{Arc, RwLock};
 
-use crate::activated::prelude::*;
+use crate::poly::prelude::*;
 use candle_core::{Device, Result, Tensor};
 use expander::Polynomial;
 use fnv::FnvHashMap;
