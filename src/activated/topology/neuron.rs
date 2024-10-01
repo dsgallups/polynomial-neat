@@ -1,5 +1,6 @@
 use std::sync::{Arc, RwLock};
 
+use rand::Rng;
 use uuid::Uuid;
 
 use crate::activated::prelude::*;
@@ -7,115 +8,141 @@ use crate::activated::prelude::*;
 #[derive(Clone, Debug)]
 pub struct NeuronTopology {
     id: Uuid,
-    neuron_props: Option<NeuronPropsTopology>,
+    neuron_type: NeuronTypeTopology,
 }
 
 impl NeuronTopology {
-    pub fn input(id: Uuid) -> Self {
-        Self {
+    pub fn input(id: Uuid) -> Arc<RwLock<Self>> {
+        Arc::new(RwLock::new(Self {
             id,
-            neuron_props: None,
-        }
-    }
-    pub fn hidden(id: Uuid, inputs: Vec<InputTopology>) -> Self {
-        let neuron_type = NeuronPropsTopology::hidden(inputs);
-        Self::new(id, Some(neuron_type))
+            neuron_type: NeuronTypeTopology::input(),
+        }))
     }
 
-    pub fn output(id: Uuid, inputs: Vec<InputTopology>) -> Self {
-        let neuron_props = NeuronPropsTopology::output(inputs);
+    pub fn output_rand(inputs: Vec<InputTopology>, rng: &mut impl Rng) -> Arc<RwLock<Self>> {
+        let neuron_type =
+            NeuronTypeTopology::output(inputs, Activation::rand(rng), Bias::rand(rng));
 
-        Self::new(id, Some(neuron_props))
+        Arc::new(RwLock::new(Self {
+            id: Uuid::new_v4(),
+            neuron_type,
+        }))
     }
 
-    pub fn new(id: Uuid, neuron_props: Option<NeuronPropsTopology>) -> Self {
-        Self { id, neuron_props }
+    pub fn new(id: Uuid, neuron_type: NeuronTypeTopology) -> Arc<RwLock<Self>> {
+        Arc::new(RwLock::new(Self { id, neuron_type }))
     }
 
-    pub fn new_arc(id: Uuid, neuron_props: Option<NeuronPropsTopology>) -> Arc<RwLock<Self>> {
-        Arc::new(RwLock::new(Self { id, neuron_props }))
-    }
-
-    pub fn props(&self) -> Option<&NeuronPropsTopology> {
-        self.neuron_props.as_ref()
-    }
-    pub fn props_mut(&mut self) -> Option<&mut NeuronPropsTopology> {
-        self.neuron_props.as_mut()
+    pub(super) fn set_inputs(&mut self, new_inputs: Vec<InputTopology>) {
+        self.neuron_type.set_inputs(new_inputs);
     }
 
     /// Note that inputs are reset here.
     pub fn deep_clone(&self) -> Self {
         NeuronTopology {
             id: Uuid::new_v4(),
-            neuron_props: self.neuron_props.as_ref().map(|props| props.deep_clone()),
+            neuron_type: self.neuron_type.deep_clone(),
         }
+    }
+
+    pub fn hidden_rand(inputs: Vec<InputTopology>, rng: &mut impl Rng) -> Arc<RwLock<Self>> {
+        let id = Uuid::new_v4();
+        let neuron_type =
+            NeuronTypeTopology::hidden(inputs, Activation::rand(rng), Bias::rand(rng));
+        Self::new(id, neuron_type)
+    }
+
+    pub fn get_random_input_mut(&mut self, rng: &mut impl Rng) -> Option<&mut InputTopology> {
+        self.neuron_type.get_random_input_mut(rng)
+    }
+
+    pub fn activation(&self) -> Option<Activation> {
+        self.neuron_type.activation()
+    }
+
+    pub fn activation_mut(&mut self) -> Option<&mut Activation> {
+        self.neuron_type.activation_mut()
+    }
+    pub fn bias(&self) -> Option<f32> {
+        self.neuron_type.bias()
+    }
+    pub fn bias_mut(&mut self) -> Option<&mut f32> {
+        self.neuron_type.bias_mut()
+    }
+    pub fn num_inputs(&self) -> usize {
+        self.neuron_type.num_inputs()
     }
 
     pub fn id(&self) -> Uuid {
         self.id
     }
 
-    pub fn id_short(&self) -> String {
-        let str = self.id.to_string();
-        str[0..6].to_string()
+    /// Returnes the removed input, if it has inputs.
+    pub fn remove_random_input(&mut self, rng: &mut impl Rng) -> Option<InputTopology> {
+        self.neuron_type.remove_random_input(rng)
     }
 
-    pub fn neuron_type(&self) -> NeuronType {
-        match self.neuron_props {
-            None => NeuronType::input(),
-            Some(ref p) => p.props_type().into(),
-        }
+    pub fn add_input(&mut self, input: InputTopology) {
+        self.neuron_type.add_input(input)
+    }
+
+    pub fn inputs(&self) -> Option<&[InputTopology]> {
+        self.neuron_type.inputs()
     }
 
     pub fn is_output(&self) -> bool {
-        self.neuron_type() == NeuronType::output()
-    }
-
-    pub fn is_hidden(&self) -> bool {
-        self.neuron_type() == NeuronType::hidden()
+        self.neuron_type.is_output()
     }
     pub fn is_input(&self) -> bool {
-        self.neuron_type() == NeuronType::input()
+        self.neuron_type.is_input()
+    }
+    pub fn is_hidden(&self) -> bool {
+        self.neuron_type.is_hidden()
     }
 
-    pub fn to_neuron(&self, neurons: &mut Vec<Arc<RwLock<SimpleNeuron>>>) {
+    pub fn trim_inputs(&mut self, ids: &[usize]) {
+        self.neuron_type.trim_inputs(ids)
+    }
+
+    pub fn to_neuron(
+        &self,
+        neurons: &mut Vec<Arc<RwLock<Neuron>>>,
+        _replicants: &[Arc<RwLock<NeuronTopology>>],
+    ) -> Arc<RwLock<Neuron>> {
         for neuron in neurons.iter() {
             if neuron.read().unwrap().id() == self.id() {
-                return;
+                return Arc::clone(neuron);
             }
         }
 
-        let new_neuron_props = match self.props() {
-            Some(topology_props) => {
-                let mut new_neuron_inputs = Vec::with_capacity(topology_props.inputs().len());
-
-                for topology_input in topology_props.inputs() {
-                    if let Some(topology_input_neuron) = topology_input.neuron() {
-                        topology_input_neuron.read().unwrap().to_neuron(neurons);
-                        let neuron_in_array = neurons
-                            .iter()
-                            .find(|n| {
-                                n.read().unwrap().id() == topology_input_neuron.read().unwrap().id()
-                            })
-                            .unwrap();
-
-                        new_neuron_inputs.push(NeuronInput::new(
-                            Arc::clone(neuron_in_array),
-                            topology_input.weight(),
-                            topology_input.exponent(),
-                        ));
-                    }
+        let neuron_type = if let Some(inputs) = self.inputs() {
+            let mut new_inputs = Vec::with_capacity(inputs.len());
+            for input in inputs {
+                if let Some(input_neuron) = input.neuron() {
+                    let neuron = input_neuron.read().unwrap().to_neuron(neurons, _replicants);
+                    new_inputs.push(NeuronInput::new(neuron, input.weight()));
                 }
-
-                Some(NeuronProps::new(
-                    topology_props.props_type(),
-                    new_neuron_inputs,
-                ))
             }
-            None => None,
+
+            if self.is_hidden() {
+                NeuronType::Hidden {
+                    inputs: new_inputs,
+                    activation: self.activation().unwrap().as_fn(),
+                    bias: self.bias().unwrap(),
+                }
+            } else {
+                NeuronType::Output {
+                    inputs: new_inputs,
+                    activation: self.activation().unwrap().as_fn(),
+                    bias: self.bias().unwrap(),
+                }
+            }
+        } else {
+            NeuronType::Input
         };
 
-        let neuron = Arc::new(RwLock::new(SimpleNeuron::new(self.id, new_neuron_props)));
-        neurons.push(Arc::clone(&neuron));
+        let neuron = Neuron::new(self.id, neuron_type);
+
+        Arc::new(RwLock::new(neuron))
     }
 }

@@ -1,3 +1,4 @@
+pub mod activation;
 pub mod input;
 pub mod mutation;
 pub mod network;
