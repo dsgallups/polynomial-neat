@@ -17,7 +17,7 @@ pub enum Activation {
 impl Activation {
     pub fn rand(rng: &mut impl Rng) -> Self {
         use Activation::*;
-        match rng.gen_range(0..4) {
+        match rng.random_range(0..4) {
             0 => Sigmoid,
             1 => Relu,
             2 => Linear,
@@ -42,6 +42,6 @@ pub struct Bias;
 
 impl Bias {
     pub fn rand(rng: &mut impl Rng) -> f32 {
-        rng.gen()
+        rng.random()
     }
 }

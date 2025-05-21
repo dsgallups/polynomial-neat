@@ -85,19 +85,18 @@ impl Network {
 fn all_outputs_have_at_least_one_input() {
     let mutation_chances = MutationChances::new_from_raw(3, 80., 50., 5., 60., 20., 10.);
 
-    let mut running_topology =
-        NetworkTopology::new(20, 7, mutation_chances, &mut rand::thread_rng());
+    let mut running_topology = NetworkTopology::new(20, 7, mutation_chances, &mut rand::rng());
 
     #[allow(unused_assignments)]
     let mut running_network = running_topology.to_network();
 
-    for gen in 0..100000 {
-        println!("gen: {}", gen);
-        running_topology = running_topology.replicate(&mut rand::thread_rng());
+    for generation in 0..100000 {
+        println!("generation: {}", generation);
+        running_topology = running_topology.replicate(&mut rand::rng());
 
         //let debug_info = format!("{:#?}", running_topology);
 
-        //fs::write(format!("./outputs/org_{}.dbg", gen), debug_info).unwrap();
+        //fs::write(format!("./outputs/org_{}.dbg", generation), debug_info).unwrap();
 
         running_network = running_topology.to_network();
         let result = running_network.predict(&[1., 5.]).collect::<Vec<f32>>();

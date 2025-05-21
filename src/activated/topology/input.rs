@@ -18,7 +18,7 @@ impl InputTopology {
     pub fn new_rand(input: Weak<RwLock<NeuronTopology>>, rng: &mut impl Rng) -> Self {
         Self {
             input,
-            weight: rng.gen_range(-1.0..=1.0),
+            weight: rng.random_range(-1.0..=1.0),
         }
     }
 

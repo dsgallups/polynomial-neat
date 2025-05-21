@@ -39,15 +39,12 @@ impl PolyNetworkTopology {
         let output_neurons = (0..num_outputs)
             .map(|_| {
                 //a random number of connections to random input neurons;
-                let mut chosen_inputs = (0..rng.gen_range(1..input_neurons.len()))
+                let mut chosen_inputs = (0..rng.random_range(1..input_neurons.len()))
                     .map(|_| {
-                        let topology_index = rng.gen_range(0..input_neurons.len());
+                        let topology_index = rng.random_range(0..input_neurons.len());
                         let input = input_neurons.get(topology_index).unwrap();
                         (
-                            PolyInputTopology::new_rand(
-                                Arc::downgrade(input),
-                                &mut rand::thread_rng(),
-                            ),
+                            PolyInputTopology::new_rand(Arc::downgrade(input), &mut rand::rng()),
                             topology_index,
                         )
                     })
@@ -130,12 +127,12 @@ impl PolyNetworkTopology {
 
     pub fn random_neuron(&self, rng: &mut impl Rng) -> &Arc<RwLock<PolyNeuronTopology>> {
         self.neurons
-            .get(rng.gen_range(0..self.neurons.len()))
+            .get(rng.random_range(0..self.neurons.len()))
             .unwrap()
     }
     pub fn remove_random_neuron(&mut self, rng: &mut impl Rng) {
         if self.neurons.len() > 1 {
-            let index = rng.gen_range(0..self.neurons.len());
+            let index = rng.random_range(0..self.neurons.len());
 
             {
                 let neuron_props = self.neurons.get(index).unwrap().read().unwrap();
@@ -341,7 +338,7 @@ impl PolyNetworkTopology {
                         continue;
                     };
 
-                    random_input.adjust_weight(rng.gen_range(-1.0..=1.0));
+                    random_input.adjust_weight(rng.random_range(-1.0..=1.0));
                 }
                 MutateExponent => {
                     let mut neuron = self.random_neuron(rng).write().unwrap();
@@ -351,7 +348,7 @@ impl PolyNetworkTopology {
                     else {
                         continue;
                     };
-                    random_input.adjust_exp(rng.gen_range(-1..=1));
+                    random_input.adjust_exp(rng.random_range(-1..=1));
                 }
             }
         }

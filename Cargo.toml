@@ -1,5 +1,5 @@
 [package]
-name = "polynomial-neat"
+name = "candle-neat"
 description = "A library that uses candle-rs under the hood for training/testing NEAT"
 repository = "https://github.com/dsgallups/polynomial-neat"
 readme = "README.md"

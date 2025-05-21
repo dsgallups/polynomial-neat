@@ -59,7 +59,7 @@ impl<'dev> Polynomial<'dev> {
         }
     }
     pub fn add_operation<'other, I: Indeterminate<'other>>(
-        mut self,
+        self,
         weight: f32,
         indeterminant: I,
         exponent: i32,
@@ -129,7 +129,7 @@ impl<'a> Polynomial<'a> {
     pub fn handle_operation(&mut self, weight: f32, variable: usize, exponent: i32) -> &mut Self {
         self.handle_polycomponent(PolyComponent::simple(weight, variable, exponent))
     }
-    pub fn handle_polycomponent(&mut self, mut component: PolyComponent) -> &mut Self {
+    pub fn handle_polycomponent(&mut self, component: PolyComponent) -> &mut Self {
         match self
             .ops
             .iter_mut()

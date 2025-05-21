@@ -38,7 +38,9 @@ impl PolyNeuronPropsTopology {
         if self.inputs.is_empty() {
             return None;
         }
-        let removed = self.inputs.swap_remove(rng.gen_range(0..self.inputs.len()));
+        let removed = self
+            .inputs
+            .swap_remove(rng.random_range(0..self.inputs.len()));
         Some(removed)
     }
 
@@ -47,6 +49,6 @@ impl PolyNeuronPropsTopology {
             return None;
         }
         let len = self.inputs.len();
-        self.inputs.get_mut(rng.gen_range(0..len))
+        self.inputs.get_mut(rng.random_range(0..len))
     }
 }

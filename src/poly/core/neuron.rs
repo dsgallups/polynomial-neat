@@ -48,11 +48,11 @@ where
 {
     fn inner(&self) -> &PolyNeuronInner<N, I>;
 
-    fn inputs(&'a self) -> Option<&[PolyInput<I>]> {
+    fn inputs(&'a self) -> Option<&'a [PolyInput<I>]> {
         self.inner().inputs()
     }
 
-    fn props(&'a self) -> Option<&PolyProps<I>> {
+    fn props(&'a self) -> Option<&'a PolyProps<I>> {
         self.inner().props()
     }
 

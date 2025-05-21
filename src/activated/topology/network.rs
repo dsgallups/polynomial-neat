@@ -30,12 +30,12 @@ impl NetworkTopology {
         let output_neurons = (0..num_outputs)
             .map(|_| {
                 //a random number of connections to random input neurons;
-                let mut chosen_inputs = (0..rng.gen_range(1..input_neurons.len()))
+                let mut chosen_inputs = (0..rng.random_range(1..input_neurons.len()))
                     .map(|_| {
-                        let topology_index = rng.gen_range(0..input_neurons.len());
+                        let topology_index = rng.random_range(0..input_neurons.len());
                         let input = input_neurons.get(topology_index).unwrap();
                         (
-                            InputTopology::new_rand(Arc::downgrade(input), &mut rand::thread_rng()),
+                            InputTopology::new_rand(Arc::downgrade(input), &mut rand::rng()),
                             topology_index,
                         )
                     })
@@ -46,7 +46,7 @@ impl NetworkTopology {
 
                 let chosen_inputs = chosen_inputs.into_iter().map(|(input, _)| input).collect();
 
-                NeuronTopology::output_rand(chosen_inputs, &mut rand::thread_rng())
+                NeuronTopology::output_rand(chosen_inputs, &mut rand::rng())
             })
             .collect::<Vec<_>>();
 
@@ -77,7 +77,7 @@ impl NetworkTopology {
                     .map(|input| InputTopology::new_rand(Arc::downgrade(input), rng))
                     .collect::<Vec<_>>();
 
-                NeuronTopology::output_rand(chosen_inputs, &mut rand::thread_rng())
+                NeuronTopology::output_rand(chosen_inputs, &mut rand::rng())
             })
             .collect::<Vec<_>>();
 
@@ -108,12 +108,12 @@ impl NetworkTopology {
 
     pub fn random_neuron(&self, rng: &mut impl Rng) -> &Arc<RwLock<NeuronTopology>> {
         self.neurons
-            .get(rng.gen_range(0..self.neurons.len()))
+            .get(rng.random_range(0..self.neurons.len()))
             .unwrap()
     }
     pub fn remove_random_neuron(&mut self, rng: &mut impl Rng) {
         if self.neurons.len() > 1 {
-            let index = rng.gen_range(0..self.neurons.len());
+            let index = rng.random_range(0..self.neurons.len());
 
             {
                 let neuron_props = self.neurons.get(index).unwrap().read().unwrap();
@@ -248,7 +248,7 @@ impl NetworkTopology {
                     let Some(random_input) = neuron.get_random_input_mut(rng) else {
                         continue;
                     };
-                    random_input.adjust_weight(rng.gen_range(-1.0..=1.0));
+                    random_input.adjust_weight(rng.random_range(-1.0..=1.0));
                 }
                 MutateActivationFunction => {
                     let mut neuron = self.random_neuron(rng).write().unwrap();
@@ -262,7 +262,7 @@ impl NetworkTopology {
                     let Some(bias) = neuron.bias_mut() else {
                         continue;
                     };
-                    *bias += rng.gen_range(-1.0..=1.0);
+                    *bias += rng.random_range(-1.0..=1.0);
                 }
             }
         }

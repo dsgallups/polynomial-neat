@@ -120,7 +120,7 @@ fn candle_scratch() -> Result<()> {
 }
 #[test]
 fn candle_scratch_two() -> Result<()> {
-    let topology = PolyNetworkTopology::new(2, 2, MutationChances::none(), &mut rand::thread_rng());
+    let topology = PolyNetworkTopology::new(2, 2, MutationChances::none(), &mut rand::rng());
 
     println!("here 1");
     let candle_net = CandleNetwork::from_topology(&topology, &Device::Cpu)?;

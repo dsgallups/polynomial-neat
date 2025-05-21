@@ -3,7 +3,7 @@ use std::collections::HashSet;
 use crate::poly::{candle_net::network::CandleNetwork, prelude::*};
 fn _test_dupes() {
     let mutation_chances = MutationChances::new_from_raw(3, 80., 50., 5., 60., 20.);
-    let mut top_1 = PolyNetworkTopology::new(20, 20, mutation_chances, &mut rand::thread_rng());
+    let mut top_1 = PolyNetworkTopology::new(20, 20, mutation_chances, &mut rand::rng());
 
     let mut top_2 = top_1.deep_clone();
 
@@ -24,18 +24,17 @@ fn test_two() {
     use crate::{poly::prelude::*, poly::topology::mutation::MutationChances};
     let mutation_chances = MutationChances::new_from_raw(3, 80., 50., 5., 60., 20.);
 
-    let mut running_topology =
-        PolyNetworkTopology::new(2, 2, mutation_chances, &mut rand::thread_rng());
+    let mut running_topology = PolyNetworkTopology::new(2, 2, mutation_chances, &mut rand::rng());
 
-    let mut gen = 0;
-    println!("here");
+    let mut generation = 0;
+    println!("hk ere");
     loop {
-        println!("===NEW GEN ({}) ===", gen);
-        running_topology = running_topology.replicate(&mut rand::thread_rng());
+        println!("===NEW GEN ({}) ===", generation);
+        running_topology = running_topology.replicate(&mut rand::rng());
 
         //let debug_info = format!("{:#?}", running_topology);
 
-        //fs::write(format!("./outputs/org_{}.dbg", gen), debug_info).unwrap();
+        //fs::write(format!("./outputs/org_{}.dbg", generation), debug_info).unwrap();
 
         let running_network = running_topology.to_simple_network();
         let candle_network =
@@ -54,11 +53,11 @@ fn test_two() {
             running_network.num_nodes(),
             running_network.num_inputs(),
             running_network.num_outputs(),
-            gen,
+            generation,
         );
 
-        gen += 1;
-        /*if gen > 1000 {
+        generation += 1;
+        /*if generation > 1000 {
             break;
         }*/
     }
@@ -74,20 +73,19 @@ fn _test_inf() {
     tracing::info!("test");
     let mutation_chances = MutationChances::new_from_raw(3, 80., 50., 5., 60., 20.);
 
-    let mut running_topology =
-        PolyNetworkTopology::new(2, 2, mutation_chances, &mut rand::thread_rng());
+    let mut running_topology = PolyNetworkTopology::new(2, 2, mutation_chances, &mut rand::rng());
 
     #[allow(unused_assignments)]
     let mut running_network = running_topology.to_simple_network();
 
-    let mut gen = 0;
+    let mut generation = 0;
     loop {
-        info!("===NEW GEN ({}) ===", gen);
-        running_topology = running_topology.replicate(&mut rand::thread_rng());
+        info!("===NEW GEN ({}) ===", generation);
+        running_topology = running_topology.replicate(&mut rand::rng());
 
         //let debug_info = format!("{:#?}", running_topology);
 
-        //fs::write(format!("./outputs/org_{}.dbg", gen), debug_info).unwrap();
+        //fs::write(format!("./outputs/org_{}.dbg", generation), debug_info).unwrap();
 
         running_network = running_topology.to_simple_network();
         info!("simple network made");
@@ -100,10 +98,10 @@ fn _test_inf() {
             running_network.num_nodes(),
             running_network.num_inputs(),
             running_network.num_outputs(),
-            gen,
+            generation,
         );
-        gen += 1;
-        /*if gen > 1000 {
+        generation += 1;
+        /*if generation > 1000 {
             break;
         }*/
     }

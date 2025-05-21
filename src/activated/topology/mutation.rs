@@ -18,7 +18,7 @@ pub(crate) trait MutationRateExt {
 
 impl<T: Rng> MutationRateExt for T {
     fn gen_rate(&mut self) -> u8 {
-        self.gen_range(0..=100)
+        self.random_range(0..=100)
     }
 
     fn gen_mutation_action(&mut self, chances: &MutationChances) -> MutationAction {
@@ -113,7 +113,7 @@ impl MutationChances {
         const MAX_LOOP: u8 = 5;
         let mut loop_count = 0;
         while rng.gen_rate() < self.self_mutation() && loop_count < MAX_LOOP {
-            let action = match rng.gen_range(0..6) {
+            let action = match rng.random_range(0..6) {
                 0 => SplitConnection,
                 1 => AddConnection,
                 2 => RemoveNeuron,
@@ -123,9 +123,9 @@ impl MutationChances {
             };
 
             // Generate a random number between 1.0 and 10.0
-            let value = rng.gen_range(0.0..=5.0);
+            let value = rng.random_range(0.0..=5.0);
 
-            let add_to = if rng.gen_bool(0.5) { -value } else { value };
+            let add_to = if rng.random_bool(0.5) { -value } else { value };
 
             match action {
                 MutationAction::SplitConnection => {
@@ -159,7 +159,7 @@ impl MutationChances {
     }
 
     fn adjust_self_mutation(&mut self, rng: &mut impl Rng) {
-        let rate: i8 = rng.gen_range(-1..=1);
+        let rate: i8 = rng.random_range(-1..=1);
 
         if rate < 0 && self.self_mutation == 0 {
             return;
@@ -359,7 +359,7 @@ pub fn adjust_mutation_chances() {
 
 #[test]
 pub fn check_mutate() {
-    let mut rng = rand::thread_rng();
+    let mut rng = rand::rng();
 
     let mut chances = MutationChances::new(50);
 

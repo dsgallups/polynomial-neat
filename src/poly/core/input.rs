@@ -16,8 +16,8 @@ impl<I> PolyInput<I> {
     pub fn new_rand(input: I, rng: &mut impl Rng) -> Self {
         Self {
             input,
-            weight: rng.gen_range(-1.0..=1.0),
-            exp: rng.gen_range(0..=2),
+            weight: rng.random_range(-1.0..=1.0),
+            exp: rng.random_range(0..=2),
         }
     }
 

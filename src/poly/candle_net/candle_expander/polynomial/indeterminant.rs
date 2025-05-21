@@ -14,7 +14,7 @@ pub trait Indeterminate<'dev> {
     fn identity(self, device: &'dev Device) -> Polynomial<'dev>;
 }
 
-impl<'dev, 'dev2> Indeterminate<'dev> for PolyComponent {
+impl<'dev> Indeterminate<'dev> for PolyComponent {
     fn apply_operation(self, device: &'dev Device, weight: f32, exponent: i32) -> Polynomial<'dev> {
         let mut exponentiated = self.powi(exponent);
         exponentiated *= weight;

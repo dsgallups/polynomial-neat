@@ -75,7 +75,7 @@ impl NeuronTypeTopology {
         use NeuronTypeTopology::*;
         match self {
             Input => panic!("Cannot add input to an input node!"),
-            Hidden { ref mut inputs, .. } | Output { ref mut inputs, .. } => {
+            Hidden { inputs, .. } | Output { inputs, .. } => {
                 inputs.push(input);
             }
         }
@@ -84,7 +84,7 @@ impl NeuronTypeTopology {
         use NeuronTypeTopology::*;
         match self {
             Input => None,
-            Hidden { ref inputs, .. } | Output { ref inputs, .. } => Some(inputs),
+            Hidden { inputs, .. } | Output { inputs, .. } => Some(inputs),
         }
     }
 
@@ -93,7 +93,7 @@ impl NeuronTypeTopology {
         use NeuronTypeTopology::*;
         match self {
             Input => {}
-            Hidden { ref mut inputs, .. } | Output { ref mut inputs, .. } => {
+            Hidden { inputs, .. } | Output { inputs, .. } => {
                 let mut sorted_indices = indices.to_vec();
                 sorted_indices.sort_unstable_by(|a, b| b.cmp(a));
 
@@ -113,7 +113,7 @@ impl NeuronTypeTopology {
                 if inputs.is_empty() {
                     return None;
                 }
-                let removed = inputs.swap_remove(rng.gen_range(0..inputs.len()));
+                let removed = inputs.swap_remove(rng.random_range(0..inputs.len()));
                 Some(removed)
             }
         }
@@ -128,7 +128,7 @@ impl NeuronTypeTopology {
                     return None;
                 }
                 let len = inputs.len();
-                inputs.get_mut(rng.gen_range(0..len))
+                inputs.get_mut(rng.random_range(0..len))
             }
         }
     }
