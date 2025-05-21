@@ -1,3 +1,5 @@
+//! A polynomial network
+
 pub mod candle_net;
 pub mod core;
 pub mod simple_net;
@@ -15,7 +17,7 @@ pub mod prelude {
     };
     pub use super::topology::{
         input::PolyInputTopology,
-        mutation::{MutationAction, MutationChances, MAX_MUTATIONS},
+        mutation::{MAX_MUTATIONS, MutationAction, MutationChances},
         network::PolyNetworkTopology,
         neuron::PolyNeuronTopology,
         neuron_type::PolyNeuronPropsTopology,

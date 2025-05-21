@@ -4,7 +4,6 @@ use std::{
 };
 
 use rand::Rng;
-use tracing::info;
 use uuid::Uuid;
 
 use crate::poly::prelude::*;

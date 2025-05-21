@@ -50,6 +50,7 @@ impl<T: Rng> MutationRateExt for T {
 
 pub const MAX_MUTATIONS: u8 = 200;
 
+/// These are the settings you pass to a network for mutation chances.
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub struct MutationChances {
     self_mutation: u8,

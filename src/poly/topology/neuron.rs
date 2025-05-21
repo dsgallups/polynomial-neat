@@ -4,6 +4,11 @@ use uuid::Uuid;
 
 use crate::poly::prelude::*;
 
+/// This defines a node's topology. What does this mean?
+///
+/// this node has an identifier.
+///
+/// Its props are its inputs.
 #[derive(Clone, Debug)]
 pub struct PolyNeuronTopology {
     id: Uuid,
@@ -11,6 +16,8 @@ pub struct PolyNeuronTopology {
 }
 
 impl PolyNeuronTopology {
+    /// This creates a topological input node. There are no props
+    /// for this type.
     pub fn input(id: Uuid) -> Self {
         Self {
             id,
