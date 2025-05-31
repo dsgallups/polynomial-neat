@@ -1,9 +1,8 @@
 [package]
 name = "candle-neat"
 description = "A library that uses candle-rs under the hood for training/testing NEAT"
-repository = "https://github.com/dsgallups/candle-neat"
+repository = "https://github.com/dsgallups/polynomial-neat"
 readme = "README.md"
-rust-version = "1.80"
 authors = ["Daniel Gallups <dsgallups@protonmail.com>"]
 keywords = [
     "genetic_algorithms",
@@ -13,23 +12,22 @@ keywords = [
     "speciation",
 ]
 categories = ["algorithms", "science", "simulation"]
-license = "MIT OR Apache-2.0"
 version = "0.1.0"
-edition = "2021"
+edition = "2024"
 
 [features]
 # debug = ["dep:tracing", "dep:tracing-subscriber"]
 debug = []
 
 [dependencies]
-candle-core = { version = "0.7.0", features = ["metal"] }
+candle-core = { version = "0.9.1", features = ["metal"] }
 
 tracing = { version = "0.1", features = ["attributes"] }
 tracing-subscriber = { version = "0.3" }
-rand = "0.8.5"
+rand = "0.9"
 rayon = "1.10"
 uuid = { version = "1.10", features = ["rng", "serde", "v4"] }
-candle-nn = "0.7.0"
+candle-nn = "0.9.1"
 fnv = "1.0.7"
 
 [dev-dependencies]
