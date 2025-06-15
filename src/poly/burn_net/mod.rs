@@ -5,18 +5,16 @@
 use std::sync::{Arc, RwLock};
 
 use crate::poly::prelude::*;
-use candle_core::{Device, Result, Tensor};
+use burn::prelude::*;
 use expander::Polynomial;
 use fnv::FnvHashMap;
-use network::CandleNetwork;
+use network::BurnNetwork;
 use uuid::Uuid;
+
 mod basis_prime;
-pub mod candle_expander;
 mod coeff;
 mod expander;
 pub mod network;
-#[cfg(test)]
-mod scratch;
 
 #[cfg(test)]
 mod tests;
@@ -26,15 +24,12 @@ fn get_topology_polynomials(topology: &PolyNetworkTopology) -> Vec<Polynomial<Uu
 
     for output in topology.neurons().iter().filter_map(|neuron| {
         let neuron = neuron.read().unwrap();
-        //println!("get_top_poly, id = {}", neuron.id());
         if neuron.is_output() {
             Some(neuron)
         } else {
             None
         }
     }) {
-        //let output_tensor =
-
         let poly = create_polynomial(&output);
         neurons.push(poly)
     }
@@ -43,11 +38,9 @@ fn get_topology_polynomials(topology: &PolyNetworkTopology) -> Vec<Polynomial<Uu
 }
 
 fn create_polynomial(top: &PolyNeuronTopology) -> Polynomial<Uuid> {
-    //println!("create_polynomial, id = {}", top.id());
     let Some(props) = top.props() else {
         //this is an input
         return Polynomial::unit(top.id());
-        //todoo
     };
 
     let mut running_polynomial = Polynomial::default();

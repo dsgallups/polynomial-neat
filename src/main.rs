@@ -1,10 +1,13 @@
 use std::io::{self, Write};
 
-use candle_core::Device;
-use candle_neat::poly::{
-    candle_net::network::CandleNetwork, prelude::*, topology::mutation::MutationChances,
+use burn::backend::Cuda;
+// use burn::backend::{Cuda, Wgpu};
+use burn_neat::poly::{
+    burn_net::network::BurnNetwork, prelude::*, topology::mutation::MutationChances,
 };
 use tracing::info;
+
+const MAX_GEN: i32 = 5000;
 
 fn main() {
     tracing_subscriber::fmt::init();
@@ -12,7 +15,8 @@ fn main() {
 
     let mut running_topology = PolyNetworkTopology::new(2, 2, mutation_chances, &mut rand::rng());
 
-    let dev = Device::new_metal(0).unwrap();
+    //let device = burn::backend::wgpu::WgpuDevice::DiscreteGpu(0);
+    let device = burn::backend::cuda::CudaDevice::default();
     let mut generation = 0;
     info!("here");
     let mut step = false;
@@ -29,12 +33,9 @@ fn main() {
         info!("simple network made");
         let result = running_network.predict(&[1., 5.]).collect::<Vec<f32>>();
         info!("simple net predicted");
-        let candle_network = CandleNetwork::from_topology(&running_topology, &dev).unwrap();
-        info!("candle network made");
-        let candle_result = candle_network
-            .predict(&[1., 5.])
-            .unwrap()
-            .collect::<Vec<_>>();
+        let burn_network = BurnNetwork::<Cuda>::from_topology(&running_topology, device.clone());
+        info!("burn network made");
+        let burn_result = burn_network.predict(&[1., 5.]);
 
         info!(
             "==network_len==\n\
@@ -45,23 +46,21 @@ fn main() {
             running_network.num_inputs(),
             running_network.num_outputs()
         );
-        info!("\nsresult: {:?}\ncresult: {:?}", result, candle_result);
+        info!("\ncpu result: {:?}\ngpu result: {:?}", result, burn_result);
 
         let mut difference = Vec::new();
-        for (i, (s_p, c_p)) in result
-            .into_iter()
-            .zip(candle_result.into_iter())
-            .enumerate()
-        {
-            if (s_p - c_p).abs() > 0.001 {
-                difference.push((s_p, c_p));
+
+        #[allow(clippy::unused_enumerate_index)]
+        for (_i, (cpu_p, burn_p)) in result.into_iter().zip(burn_result.into_iter()).enumerate() {
+            if (cpu_p - burn_p).abs() > 0.01 {
+                difference.push((cpu_p, burn_p));
             }
         }
         if !difference.is_empty() {
             info!("difference found:");
             let mut output = String::new();
-            for (s_p, c_p) in difference {
-                output.push_str(&format!("({s_p}, {c_p}), "));
+            for (cpu_p, burn_p) in difference {
+                output.push_str(&format!("(cpu: {cpu_p}, gpu: {burn_p}), "));
             }
             info!("{}", output);
             step = true;
@@ -77,7 +76,7 @@ fn main() {
         }
 
         generation += 1;
-        if generation > 10 {
+        if generation > MAX_GEN {
             info!("Resetting");
             running_topology = PolyNetworkTopology::new(2, 20, mutation_chances, &mut rand::rng());
             generation = 0;

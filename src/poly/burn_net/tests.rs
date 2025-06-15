@@ -1,9 +1,13 @@
-use super::{create_polynomial, expander::Polynomial, get_topology_polynomials, CandleNetwork};
-use crate::poly::{candle_net::expander::PolyComponent, prelude::*};
-use candle_core::{Device, Result, Tensor};
+use super::{BurnNetwork, create_polynomial, expander::Polynomial, get_topology_polynomials};
+use crate::poly::{burn_net::expander::PolyComponent, prelude::*};
+use burn::backend::NdArray;
+use burn::prelude::*;
 use fnv::FnvHashMap;
 use pretty_assertions::assert_eq;
 use uuid::Uuid;
+
+type TestBackend = NdArray;
+
 #[test]
 pub fn simple_network() {
     let input_id = Uuid::new_v4();
@@ -29,7 +33,7 @@ pub fn simple_network() {
 }
 
 #[test]
-pub fn two_input_network() -> Result<()> {
+pub fn two_input_network() {
     let x = Uuid::new_v4();
     let y = Uuid::new_v4();
 
@@ -103,9 +107,8 @@ pub fn two_input_network() -> Result<()> {
     );
 
     println!("{:#?}", polynomials);
-
-    Ok(())
 }
+
 #[test]
 fn map_inputs_to_outputs() {
     use pretty_assertions::assert_eq;
@@ -180,4 +183,38 @@ fn map_inputs_to_outputs() {
             }
         }
     }
+}
+
+#[test]
+fn test_burn_network_functionality() {
+    let x_id = Uuid::new_v4();
+    let y_id = Uuid::new_v4();
+
+    let x_n = arc(PolyNeuronTopology::input(x_id));
+    let y_n = arc(PolyNeuronTopology::input(y_id));
+
+    let hidden_one = arc(PolyNeuronTopology::hidden(
+        Uuid::new_v4(),
+        vec![
+            PolyInputTopology::downgrade(&x_n, 3., 1),
+            PolyInputTopology::downgrade(&y_n, 1., 1),
+        ],
+    ));
+
+    let output_1 = arc(PolyNeuronTopology::output(
+        Uuid::new_v4(),
+        vec![PolyInputTopology::downgrade(&hidden_one, 1., 2)],
+    ));
+
+    let topology = PolyNetworkTopology::from_raw_parts(
+        vec![x_n, y_n, hidden_one, output_1],
+        MutationChances::none(),
+    );
+
+    let device = burn::backend::ndarray::NdArrayDevice::default();
+    let burn_net = BurnNetwork::<TestBackend>::from_topology(&topology, device);
+
+    let res = burn_net.predict(&[3.0, 2.0]);
+    // (3*3 + 2)^2 = 11^2 = 121
+    assert_eq!(res[0], 121.0);
 }

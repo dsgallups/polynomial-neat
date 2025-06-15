@@ -1,22 +1,5 @@
-/*pub struct BasisPrimeTemplate<T>(Vec<Vec<T>>);
-
-impl<T: Default + Clone> BasisPrimeTemplate<T> {
-    // creates a zeroed prime template with the default value of T
-    pub fn new(num_cols: usize, num_rows: usize) -> Self {
-        Self(vec![vec![T::default(); num_cols]; num_rows])
-    }
-}
-
-#[derive(Clone, Copy, Default)]
-pub enum TemplateValue<T> {
-    Zero,
-    One,
-
-}*/
-
-use candle_core::{Device, Result, Tensor};
+use burn::prelude::*;
 use fnv::FnvHashMap;
-use std::env::var;
 use std::hash::Hash;
 
 use super::expander::{Polynomial, Variable};
@@ -52,11 +35,12 @@ impl<T> BasisTemplate<T> {
         let basis_vec = basis_from_poly_list(polynomials);
         Self::from_raw(basis_vec)
     }
-    pub fn make_tensor(
+
+    pub fn make_tensor<B: Backend>(
         &self,
         variables: impl IntoIterator<Item = (T, f32)>,
-        device: &Device,
-    ) -> Result<Tensor>
+        device: &B::Device,
+    ) -> Tensor<B, 2>
     where
         T: Hash + Eq + Clone,
     {
@@ -75,8 +59,10 @@ impl<T> BasisTemplate<T> {
 
             values.push(running_val);
         }
-        //now make a tensor
-        Tensor::new(values, device)?.unsqueeze(1)
+
+        // Create a tensor with shape [rows, 1]
+        let data = TensorData::new(values, [self.0.len(), 1]);
+        Tensor::<B, 2>::from_data(data, device)
     }
 }
 
