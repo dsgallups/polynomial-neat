@@ -406,7 +406,7 @@ impl PolyNetworkTopology {
                 None => vec![],
             }
         }
-        let mut num_removed = 0;
+        let mut _num_removed = 0;
         loop {
             let mut remove_queue = Vec::new();
 
@@ -438,7 +438,7 @@ impl PolyNetworkTopology {
                     panic!("tried to remove inputs from an input node!");
                 };
                 props.trim_inputs(removal.indices.as_slice());
-                num_removed += 1;
+                _num_removed += 1;
             }
         }
 

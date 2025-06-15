@@ -1,6 +1,7 @@
 use std::collections::HashSet;
 
-use crate::poly::{candle_net::network::CandleNetwork, prelude::*};
+use crate::poly::{burn_net::network::BurnNetwork, prelude::*};
+use burn::backend::NdArray;
 fn _test_dupes() {
     let mutation_chances = MutationChances::new_from_raw(3, 80., 50., 5., 60., 20.);
     let mut top_1 = PolyNetworkTopology::new(20, 20, mutation_chances, &mut rand::rng());
@@ -37,19 +38,16 @@ fn test_two() {
         //fs::write(format!("./outputs/org_{}.dbg", generation), debug_info).unwrap();
 
         let running_network = running_topology.to_simple_network();
-        let candle_network =
-            CandleNetwork::from_topology(&running_topology, &candle_core::Device::Cpu).unwrap();
+        let device = burn::backend::ndarray::NdArrayDevice::default();
+        let burn_network = BurnNetwork::<NdArray>::from_topology(&running_topology, device);
         println!("simple network made");
         let result = running_network.predict(&[1., 5.]).collect::<Vec<f32>>();
-        let candle_result = candle_network
-            .predict(&[1., 5.])
-            .unwrap()
-            .collect::<Vec<_>>();
+        let burn_result = burn_network.predict(&[1., 5.]);
 
         println!(
-            "\nresult: {:?},candle_result: {:?} network_len: ({}, {}, {})\n===END GEN ({}) ===",
+            "\nresult: {:?},burn_result: {:?} network_len: ({}, {}, {})\n===END GEN ({}) ===",
             result,
-            candle_result,
+            burn_result,
             running_network.num_nodes(),
             running_network.num_inputs(),
             running_network.num_outputs(),

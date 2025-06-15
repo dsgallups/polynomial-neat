@@ -1,6 +1,6 @@
 [package]
-name = "candle-neat"
-description = "A library that uses candle-rs under the hood for training/testing NEAT"
+name = "burn-neat"
+description = "A library that uses burn under the hood for training/testing NEAT"
 repository = "https://github.com/dsgallups/polynomial-neat"
 readme = "README.md"
 authors = ["Daniel Gallups <dsgallups@protonmail.com>"]
@@ -25,9 +25,8 @@ tracing-subscriber = { version = "0.3" }
 rand = "0.9"
 rayon = "1.10"
 uuid = { version = "1.10", features = ["rng", "serde", "v4"] }
-candle-nn = "0.9.1"
 fnv = "1.0.7"
-burn = "0.17.1"
+burn = { version = "0.17.1", features = ["ndarray", "wgpu"] }
 
 [dev-dependencies]
 pretty_assertions = "1.4.1"

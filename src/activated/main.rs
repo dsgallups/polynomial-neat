@@ -1,4 +1,4 @@
-use candle_neat::{activated::prelude::*, topology::mutation::MutationChances};
+use burn_neat::{activated::prelude::*, topology::mutation::MutationChances};
 use tracing::info;
 fn main() {
     tracing_subscriber::fmt()
