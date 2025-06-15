@@ -64,7 +64,7 @@ fn test_tensor_dimensions() {
 
     for (num_inputs, num_outputs) in test_cases {
         let topology = create_test_topology(num_inputs, num_outputs, &mut rng);
-        let burn_network = BurnNetwork::<NdArray>::from_topology(&topology, device.clone());
+        let burn_network = BurnNetwork::<NdArray>::from_topology(&topology, device);
 
         // Create input tensor
         let inputs = vec![0.5_f32; num_inputs];
@@ -323,7 +323,7 @@ fn test_tensor_consistency_across_backends() {
     let device = NdArrayDevice::default();
 
     // Create multiple networks from same topology
-    let network1 = BurnNetwork::<NdArray>::from_topology(&topology, device.clone());
+    let network1 = BurnNetwork::<NdArray>::from_topology(&topology, device);
     let network2 = BurnNetwork::<NdArray>::from_topology(&topology, device);
 
     let inputs = vec![1.0, 2.0, 3.0];
@@ -353,7 +353,7 @@ fn test_evolved_network_tensor_integrity() {
 
     // Test network at each evolution stage
     for generation in 0..10 {
-        let burn_network = BurnNetwork::<NdArray>::from_topology(&topology, device.clone());
+        let burn_network = BurnNetwork::<NdArray>::from_topology(&topology, device);
 
         let inputs = vec![1.0, 2.0, 3.0, 4.0];
         let outputs = burn_network.predict(&inputs);

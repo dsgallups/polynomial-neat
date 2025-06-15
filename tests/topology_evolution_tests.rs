@@ -498,7 +498,7 @@ fn count_total_connections(topology: &PolyNetworkTopology) -> usize {
         .iter()
         .map(|neuron| {
             let n = neuron.read().unwrap();
-            if let Some(inputs) = n.props().and_then(|p| Some(p.inputs())) {
+            if let Some(inputs) = n.props().map(|p| p.inputs()) {
                 inputs.len()
             } else {
                 0

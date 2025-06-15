@@ -264,8 +264,7 @@ fn test_sine_approximation() {
         }
 
         // Convert to fitness (max error ~20)
-        let fitness = (20.0 - total_error).max(0.0) / 20.0;
-        fitness
+        (20.0 - total_error).max(0.0) / 20.0
     };
 
     // Create population
