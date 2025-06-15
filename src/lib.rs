@@ -99,20 +99,21 @@
 //!
 //! For GPU acceleration, use the Burn backend networks:
 //!
-//! ```rust,no_run
+//! ```rust
 //! # use burn_neat::poly::prelude::*;
 //! # use burn_neat::poly::topology::mutation::MutationChances;
 //! use burn_neat::poly::burn_net::network::BurnNetwork;
-//! use burn::backend::Cuda;
+//! use burn::backend::NdArray;
 //!
 //! # let mutation_chances = MutationChances::new(50);
 //! # let topology = PolyNetworkTopology::new(2, 2, mutation_chances, &mut rand::rng());
-//! // Create network on CUDA device
-//! let device = burn::backend::cuda::CudaDevice::default();
-//! let burn_network = BurnNetwork::<Cuda>::from_topology(&topology, device);
+//! // Create network on CPU backend
+//! let device = burn::backend::ndarray::NdArrayDevice::default();
+//! let burn_network = BurnNetwork::<NdArray>::from_topology(&topology, device);
 //!
-//! // Make predictions on GPU
+//! // Make predictions
 //! let outputs = burn_network.predict(&[1.0, 0.5]);
+//! assert_eq!(outputs.len(), 2); // Two output neurons
 //! ```
 //!
 //! ## Module Structure
