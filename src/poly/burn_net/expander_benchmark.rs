@@ -1,6 +1,4 @@
-use burn::backend::NdArray;
-#[cfg(feature = "burn-wgpu")]
-use burn::backend::Wgpu;
+use burn::backend::{NdArray, Wgpu};
 use burn::prelude::*;
 use std::time::Instant;
 
@@ -300,6 +298,8 @@ pub fn run_benchmarks<B: Backend>(device: &Device<B>) {
 
 #[cfg(test)]
 mod tests {
+    use burn::backend::Wgpu;
+
     use super::*;
 
     #[test]
@@ -310,7 +310,6 @@ mod tests {
         run_benchmarks::<B>(&device);
     }
 
-    #[cfg(feature = "burn-wgpu")]
     #[test]
     #[ignore]
     fn benchmark_cpu_vs_gpu_wgpu() {
@@ -329,7 +328,6 @@ pub fn main() {
     println!("Running polynomial expansion benchmarks...");
     run_benchmarks::<DefaultBackend>(&device);
 
-    #[cfg(feature = "burn-wgpu")]
     {
         println!("\n\nRunning with WGPU backend...");
         run_benchmarks::<Wgpu>(&Default::default());

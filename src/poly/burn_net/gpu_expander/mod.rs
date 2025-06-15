@@ -293,11 +293,12 @@ impl<B: Backend> GpuPolynomial<B> {
         let mut components = Vec::new();
 
         let coeffs_vec = coeffs.to_vec::<f32>().unwrap();
-        let exps_data = exps.to_vec::<i64>().unwrap();
-        let valid_vec = valid.to_vec::<bool>().unwrap();
+        let exps_data = exps.to_vec::<i32>().unwrap();
+        //let exps_data = exps.to_vec::<i32>().unwrap();
+        let valid_vec = valid.to_vec::<u32>().unwrap();
 
         for i in 0..self.max_terms {
-            if valid_vec[i] && coeffs_vec[i].abs() > 1e-10 {
+            if valid_vec[i] > 0 && coeffs_vec[i].abs() > 1e-10 {
                 let mut vars = Vec::new();
                 for j in 0..self.var_count {
                     let exp = exps_data[i * self.var_count + j] as i32;
