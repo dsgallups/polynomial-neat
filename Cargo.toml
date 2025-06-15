@@ -20,8 +20,6 @@ edition = "2024"
 debug = []
 
 [dependencies]
-candle-core = { version = "0.9.1", features = ["metal"] }
-
 tracing = { version = "0.1", features = ["attributes"] }
 tracing-subscriber = { version = "0.3" }
 rand = "0.9"
@@ -29,6 +27,7 @@ rayon = "1.10"
 uuid = { version = "1.10", features = ["rng", "serde", "v4"] }
 candle-nn = "0.9.1"
 fnv = "1.0.7"
+burn = "0.17.1"
 
 [dev-dependencies]
 pretty_assertions = "1.4.1"
