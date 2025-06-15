@@ -1,6 +1,7 @@
 //! A polynomial network
 
-pub mod candle_net;
+pub mod burn_net;
+// pub mod candle_net;  // Commented out - replaced by burn_net
 pub mod core;
 pub mod simple_net;
 pub mod topology;

@@ -1,49 +1,38 @@
-use candle_core::{Device, Result, Tensor};
-/*
-fn main() -> Result<()> {
-    let coeffs: Vec<f32> = vec![4.0, 2.0, 9.0, -5.0, 1.0];
-    let val: f32 = 5.0;
+use burn::backend::Ndarray;
+use burn::prelude::*;
 
-    let vals: [f32; 5] = [
-        val.powi(3),
-        val.powi(2),
-        val.powi(1),
-        val.powi(0),
-        val.powi(-1),
-    ];
-    let powers = Tensor::new(&vals, &Device::Cpu)?;
+type TestBackend = Ndarray;
 
-    let coeffs_tensor = Tensor::new(coeffs, &Device::Cpu)?;
-    let product = coeffs_tensor.mul(&powers)?;
+fn main() {
+    let device = burn::backend::ndarray::NdarrayDevice::default();
 
-    let sum = product.sum_all()?; // This is sum(coeffs[i] * powers[i})
-    println!("sum: {}", sum);
-    //let result = sum;
-
-    Ok(())
-}*/
-
-fn main() -> Result<()> {
     let coeffs: Vec<f32> = vec![4.0, 2.0, 9.0, -5.0, 1.0];
     let len = coeffs.len();
 
-    let coeffs_tensor = Tensor::new(coeffs, &Device::Cpu)?;
+    let coeffs_data = TensorData::new(coeffs.clone(), [len]);
+    let coeffs_tensor: Tensor<TestBackend, 1> = Tensor::from_data(coeffs_data, &device);
 
+    // Create outer product by unsqueezing and matmul
     let outer_1 = coeffs_tensor
-        .unsqueeze(1)?
-        .matmul(&coeffs_tensor.unsqueeze(0)?)?;
+        .clone()
+        .unsqueeze_dim(1)
+        .matmul(coeffs_tensor.clone().unsqueeze_dim(0));
 
-    let flattened = outer_1.flatten(0, 1)?;
+    // Flatten the tensor
+    let shape = outer_1.shape();
+    let flattened = outer_1.reshape([shape.dims[0] * shape.dims[1]]);
 
+    // Create another outer product
     let outer_2 = flattened
-        .unsqueeze(1)?
-        .matmul(&coeffs_tensor.unsqueeze(0)?)?;
+        .unsqueeze_dim(1)
+        .matmul(coeffs_tensor.clone().unsqueeze_dim(0));
 
-    let cubic_tensor = outer_2.reshape((len, len, len))?;
+    // Reshape to cubic tensor
+    let cubic_tensor = outer_2.reshape([len, len, len]);
 
     let val: f32 = 5.;
 
-    let vals: [f32; 5] = [
+    let vals: Vec<f32> = vec![
         val.powi(3),
         val.powi(2),
         val.powi(1),
@@ -51,28 +40,27 @@ fn main() -> Result<()> {
         val.powi(-1),
     ];
 
-    let powers = Tensor::new(&vals, &Device::Cpu)?;
+    let powers_data = TensorData::new(vals, [5]);
+    let powers: Tensor<TestBackend, 1> = Tensor::from_data(powers_data, &device);
 
     // Apply powers across all three dimensions
-    let powers_i = powers.unsqueeze(1)?.unsqueeze(2)?; // Shape: (5, 1, 1)
-    let powers_j = powers.unsqueeze(0)?.unsqueeze(2)?; // Shape: (1, 5, 1)
-    let powers_k = powers.unsqueeze(0)?.unsqueeze(1)?; // Shape: (1, 1, 5)
+    let powers_i = powers.clone().unsqueeze_dim(1).unsqueeze_dim(2); // Shape: (5, 1, 1)
+    let powers_j = powers.clone().unsqueeze_dim(0).unsqueeze_dim(2); // Shape: (1, 5, 1)
+    let powers_k = powers.clone().unsqueeze_dim(0).unsqueeze_dim(1); // Shape: (1, 1, 5)
 
-    println!(
-        "powers i, j, k:\n{}\n{}\n{}\n",
-        powers_i, powers_j, powers_k
-    );
+    println!("powers i shape: {:?}", powers_i.shape());
+    println!("powers j shape: {:?}", powers_j.shape());
+    println!("powers k shape: {:?}", powers_k.shape());
 
-    //let result = cubic_tensor.mul(&powers.expand((5, 5, 5))?)?;
     // Element-wise multiplication across all three axes
-    let result = cubic_tensor
-        .mul(&powers_i)?
-        .mul(&powers_j)?
-        .mul(&powers_k)?;
+    let result = cubic_tensor.mul(powers_i).mul(powers_j).mul(powers_k);
 
-    println!("result summed: {}", result.sum_all()?);
+    // Sum all elements
+    let sum = result.sum();
+    let sum_data = sum.to_data();
+    let sum_scalar = sum_data.as_slice::<f32>().unwrap()[0];
+
+    println!("result summed: {}", sum_scalar);
     //output: 71414.1953
     //expected output: 205587930.8
-
-    Ok(())
 }
