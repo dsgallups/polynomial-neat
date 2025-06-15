@@ -381,7 +381,7 @@ fn test_complex_evolution_scenario() {
     // Track evolution statistics
     let mut stats = EvolutionStats::new();
 
-    for generation in 0..20 {
+    for _generation in 0..20 {
         let before = topology.neurons().len();
         topology = topology.replicate(&mut rng);
         let after = topology.neurons().len();

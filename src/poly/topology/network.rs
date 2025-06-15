@@ -72,7 +72,12 @@ impl PolyNetworkTopology {
         let output_neurons = (0..num_outputs)
             .map(|_| {
                 //a random number of connections to random input neurons;
-                let mut chosen_inputs = (0..rng.random_range(1..input_neurons.len()))
+                let num_connections = if input_neurons.len() == 1 {
+                    1 // If only one input, connect to it
+                } else {
+                    rng.random_range(1..input_neurons.len())
+                };
+                let mut chosen_inputs = (0..num_connections)
                     .map(|_| {
                         let topology_index = rng.random_range(0..input_neurons.len());
                         let input = input_neurons.get(topology_index).unwrap();

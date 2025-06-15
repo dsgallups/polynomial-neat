@@ -44,6 +44,21 @@ impl<T: Rng> MutationRateExt for T {
 
         // note that mutation chance values add up to 100.
 
+        // Handle edge case: when rate is 0, only select an action if its chance > 0
+        if rate == 0.0 {
+            if chances.split_connection() > 0.0 {
+                return SplitConnection;
+            } else if chances.add_connection() > 0.0 {
+                return AddConnection;
+            } else if chances.remove_connection() > 0.0 {
+                return RemoveNeuron;
+            } else if chances.mutate_weight() > 0.0 {
+                return MutateWeight;
+            } else {
+                return MutateExponent;
+            }
+        }
+
         if rate <= chances.split_connection() {
             SplitConnection
         } else if rate <= chances.split_connection() + chances.add_connection() {
@@ -722,20 +737,11 @@ mod tests {
         }
 
         // Test extreme cases - only mutate exponent
-        // Note: Due to how the selection works with cumulative sums,
-        // we need to ensure the rate generation doesn't always return 0
         let chances = MutationChances::new_from_raw(100, 0.0, 0.0, 0.0, 0.0, 100.0);
-        let mut found_mutate_exponent = false;
-        for _ in 0..20 {
+        for _ in 0..10 {
             let action = rng.gen_mutation_action(&chances);
-            if matches!(action, MutationAction::MutateExponent) {
-                found_mutate_exponent = true;
-            }
+            assert!(matches!(action, MutationAction::MutateExponent));
         }
-        assert!(
-            found_mutate_exponent,
-            "Should find at least one MutateExponent action"
-        );
     }
 
     #[test]

@@ -360,7 +360,7 @@ fn test_fitness_based_selection() {
 }
 
 #[test]
-fn test_AND_gate_evolution() {
+fn test_and_gate_evolution() {
     let mut rng = test_rng();
 
     // AND gate is linearly separable, should be easier than XOR
