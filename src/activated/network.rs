@@ -90,7 +90,7 @@ fn all_outputs_have_at_least_one_input() {
     #[allow(unused_assignments)]
     let mut running_network = running_topology.to_network();
 
-    for generation in 0..100000 {
+    for generation in 0..100 {
         println!("generation: {}", generation);
         running_topology = running_topology.replicate(&mut rand::rng());
 

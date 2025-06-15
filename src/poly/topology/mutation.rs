@@ -1,17 +1,34 @@
 use rand::Rng;
 
+/// Represents the different types of mutations that can occur during network evolution.
+///
+/// Each mutation type modifies the network topology or parameters in a specific way
+/// to explore the solution space.
 #[derive(Clone, Debug)]
 pub enum MutationAction {
+    /// Split an existing connection by adding a new neuron in between.
+    /// This increases network complexity by adding a hidden layer neuron.
     SplitConnection,
+    /// Add a new connection between two existing neurons.
+    /// This creates new pathways for information flow.
     AddConnection,
+    /// Remove a neuron and all its connections from the network.
+    /// This simplifies the network by removing unnecessary complexity.
     RemoveNeuron,
+    /// Modify the weight of an existing connection.
+    /// This fine-tunes the strength of connections.
     MutateWeight,
+    /// Modify the exponent of a polynomial activation.
+    /// This changes the shape of the activation function.
     MutateExponent,
 }
 
+/// Extension trait for random number generators to generate mutation-related values.
 pub(crate) trait MutationRateExt {
+    /// Generate a random rate value between 0 and 100.
     fn gen_rate(&mut self) -> u8;
 
+    /// Generate a random mutation action based on the configured chances.
     fn gen_mutation_action(&mut self, chances: &MutationChances) -> MutationAction;
 }
 
@@ -48,20 +65,63 @@ impl<T: Rng> MutationRateExt for T {
     }
 }
 
+/// Maximum number of mutations that can occur in a single evolution step.
+///
+/// This prevents infinite mutation loops and ensures evolution remains tractable.
 pub const MAX_MUTATIONS: u8 = 200;
 
-/// These are the settings you pass to a network for mutation chances.
+/// Configuration for controlling mutation probabilities during network evolution.
+///
+/// This struct defines the likelihood of each type of mutation occurring when
+/// a network evolves. All mutation chances are normalized to sum to 100%.
+///
+/// # Example
+///
+/// ```rust
+/// use burn_neat::poly::prelude::*;
+/// use burn_neat::poly::topology::mutation::MutationChances;
+///
+/// // Create balanced mutation chances (20% each)
+/// let balanced = MutationChances::new(50);
+///
+/// // Create custom mutation chances
+/// let custom = MutationChances::new_from_raw(
+///     3,      // max mutations per evolution
+///     80.0,   // 80% chance to split connections (add neurons)
+///     50.0,   // relative chance to add connections
+///     5.0,    // low chance to remove neurons
+///     60.0,   // moderate chance to mutate weights
+///     20.0    // low chance to mutate exponents
+/// );
+/// ```
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub struct MutationChances {
+    /// Probability (0-100) of performing any mutation at all
     self_mutation: u8,
+    /// Relative probability of splitting a connection
     split_connection: f32,
+    /// Relative probability of adding a new connection
     add_connection: f32,
+    /// Relative probability of removing a connection
     remove_connection: f32,
+    /// Relative probability of mutating a weight
     mutate_weight: f32,
+    /// Relative probability of mutating an exponent
     mutate_exponent: f32,
 }
 
 impl MutationChances {
+    /// Create mutation chances with equal probability for each mutation type.
+    ///
+    /// # Arguments
+    /// * `self_mutation_rate` - The probability (0-100) of performing mutations
+    ///
+    /// # Example
+    /// ```rust
+    /// # use burn_neat::poly::topology::mutation::MutationChances;
+    /// // 50% chance of mutation, with equal chances for each type
+    /// let chances = MutationChances::new(50);
+    /// ```
     pub fn new(self_mutation_rate: u8) -> Self {
         let value = 100. / 5.;
 
@@ -75,6 +135,9 @@ impl MutationChances {
         }
     }
 
+    /// Create mutation chances that disable all mutations.
+    ///
+    /// Useful for testing or when you want to freeze network evolution.
     pub fn none() -> Self {
         Self {
             self_mutation: 0,
@@ -86,6 +149,30 @@ impl MutationChances {
         }
     }
 
+    /// Create mutation chances with custom probabilities for each mutation type.
+    ///
+    /// The individual mutation chances will be automatically normalized to sum to 100%.
+    ///
+    /// # Arguments
+    /// * `self_mutation` - Overall mutation probability (0-100)
+    /// * `split_connection` - Relative chance of splitting connections
+    /// * `add_connection` - Relative chance of adding connections
+    /// * `remove_connection` - Relative chance of removing connections
+    /// * `mutate_weight` - Relative chance of mutating weights
+    /// * `mutate_exponent` - Relative chance of mutating exponents
+    ///
+    /// # Example
+    /// ```rust
+    /// # use burn_neat::poly::topology::mutation::MutationChances;
+    /// let chances = MutationChances::new_from_raw(
+    ///     75,    // 75% chance of mutation
+    ///     40.0,  // High chance for adding neurons
+    ///     30.0,  // Moderate chance for new connections
+    ///     5.0,   // Low chance for removing neurons
+    ///     20.0,  // Moderate chance for weight changes
+    ///     5.0    // Low chance for exponent changes
+    /// );
+    /// ```
     #[allow(clippy::type_complexity)]
     pub fn new_from_raw(
         self_mutation: u8,
@@ -107,6 +194,14 @@ impl MutationChances {
         new
     }
 
+    /// Randomly adjust the mutation chances themselves.
+    ///
+    /// This implements meta-evolution where the mutation parameters can evolve
+    /// alongside the network topology. This allows the algorithm to adapt its
+    /// exploration strategy over time.
+    ///
+    /// # Arguments
+    /// * `rng` - Random number generator for probabilistic adjustments
     pub fn adjust_mutation_chances(&mut self, rng: &mut impl Rng) {
         use MutationAction::*;
         const MAX_LOOP: u8 = 5;
@@ -149,6 +244,9 @@ impl MutationChances {
         self.adjust_self_mutation(rng);
     }
 
+    /// Get the overall mutation probability (0-100).
+    ///
+    /// This determines whether any mutations will occur at all during evolution.
     pub fn self_mutation(&self) -> u8 {
         self.self_mutation
     }
@@ -177,22 +275,27 @@ impl MutationChances {
         self.self_mutation = (self.self_mutation as i8 + rate) as u8;
     }
 
+    /// Get the normalized probability of splitting a connection (0-100).
     pub fn split_connection(&self) -> f32 {
         self.split_connection
     }
 
+    /// Get the normalized probability of adding a new connection (0-100).
     pub fn add_connection(&self) -> f32 {
         self.add_connection
     }
 
+    /// Get the normalized probability of removing a connection (0-100).
     pub fn remove_connection(&self) -> f32 {
         self.remove_connection
     }
 
+    /// Get the normalized probability of mutating a weight (0-100).
     pub fn mutate_weight(&self) -> f32 {
         self.mutate_weight
     }
 
+    /// Get the normalized probability of mutating an exponent (0-100).
     pub fn mutate_exponent(&self) -> f32 {
         self.mutate_exponent
     }
@@ -282,6 +385,17 @@ impl MutationChances {
         self.mutate_exponent = (self.mutate_exponent * 100.) / total;
     }
 
+    /// Generate a sequence of mutation actions based on the configured probabilities.
+    ///
+    /// This method generates multiple mutations in one go, with each subsequent
+    /// mutation having reduced probability. The maximum number of mutations is
+    /// limited by [`MAX_MUTATIONS`].
+    ///
+    /// # Arguments
+    /// * `rng` - Random number generator for probabilistic selection
+    ///
+    /// # Returns
+    /// A vector of mutation actions to apply to the network
     pub fn gen_mutation_actions(&self, rng: &mut impl Rng) -> Vec<MutationAction> {
         let mut actions = Vec::with_capacity(MAX_MUTATIONS as usize);
         let mut replica = *self;

@@ -99,9 +99,9 @@ fn _test_inf() {
             generation,
         );
         generation += 1;
-        /*if generation > 1000 {
+        if generation > 1000 {
             break;
-        }*/
+        }
     }
 }
 

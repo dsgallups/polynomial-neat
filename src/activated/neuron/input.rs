@@ -4,7 +4,7 @@ use super::Neuron;
 
 /// Defines a weight and reference to an input [`Neuron`].
 ///
-/// The topological sibling is [`InputTopology`](crate::topology::neuron::InputTopology);
+/// The topological sibling is `InputTopology` in the topology module.
 pub struct NeuronInput {
     neuron: Arc<RwLock<Neuron>>,
     /// neuron value * weight
