@@ -312,7 +312,7 @@ impl<T: Clone + PartialEq + PartialOrd + Ord + std::fmt::Debug> Polynomial<T> {
     }
 
     /// FOIL
-    fn mul_expand(self, other: &Polynomial<T>) -> Polynomial<T> {
+    pub fn mul_expand(self, other: &Polynomial<T>) -> Polynomial<T> {
         let mut result =
             Polynomial::with_capacity(self.components().len().max(other.components().len()) * 2); // a guesstimate
 

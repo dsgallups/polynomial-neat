@@ -14,10 +14,14 @@ use uuid::Uuid;
 mod basis_prime;
 mod coeff;
 mod expander;
+pub mod gpu_expander;
 pub mod network;
 
 #[cfg(test)]
 mod tests;
+
+#[cfg(test)]
+pub mod expander_benchmark;
 
 fn get_topology_polynomials(topology: &PolyNetworkTopology) -> Vec<Polynomial<Uuid>> {
     let mut neurons = Vec::with_capacity(topology.neurons().len());
