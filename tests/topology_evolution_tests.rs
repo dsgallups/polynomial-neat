@@ -7,7 +7,7 @@
 //! - Edge cases in evolution are handled properly
 
 use burn_neat::poly::prelude::*;
-use burn_neat::poly::topology::mutation::{MutationAction, MutationChances};
+use burn_neat::poly::topology::mutation::MutationChances;
 use rand::SeedableRng;
 use rand::rngs::StdRng;
 use std::collections::HashSet;
@@ -240,7 +240,7 @@ fn test_remove_neuron_mutation() {
     );
 
     // Update mutation chances
-    let neurons = topology.neurons();
+    let neurons = topology.neurons().clone();
     let mutations = remove_mutations;
     let mut topology = PolyNetworkTopology::from_raw_parts(neurons, mutations);
 
@@ -498,7 +498,11 @@ fn count_total_connections(topology: &PolyNetworkTopology) -> usize {
         .iter()
         .map(|neuron| {
             let n = neuron.read().unwrap();
-            n.inputs().map(|inputs| inputs.len()).unwrap_or(0)
+            if let Some(inputs) = n.props().and_then(|p| Some(p.inputs())) {
+                inputs.len()
+            } else {
+                0
+            }
         })
         .sum()
 }

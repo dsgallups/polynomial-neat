@@ -11,7 +11,6 @@ use burn_neat::poly::topology::mutation::MutationChances;
 use rand::SeedableRng;
 use rand::rngs::StdRng;
 use rayon::prelude::*;
-use std::sync::Arc;
 
 /// Helper function to create a deterministic RNG
 fn test_rng() -> StdRng {
@@ -106,7 +105,7 @@ impl Population {
         // Fill rest with mutations of good individuals
         while new_population.len() < self.individuals.len() {
             // Select parent from top 50%
-            let parent_idx = rng.gen_range(0..self.individuals.len() / 2);
+            let parent_idx = rng.random_range(0..self.individuals.len() / 2);
             let parent = &self.individuals[parent_idx];
 
             // Create offspring
@@ -170,7 +169,7 @@ fn test_xor_evolution() {
     let max_generations = 100;
     let target_fitness = 0.95; // 95% correct
 
-    let mut solution_found = false;
+    let mut _solution_found = false;
     let mut best_fitness_history = Vec::new();
 
     for generation in 0..max_generations {
@@ -189,7 +188,7 @@ fn test_xor_evolution() {
 
         // Check if solution found
         if best.fitness >= target_fitness {
-            solution_found = true;
+            _solution_found = true;
             println!("Solution found in generation {}!", generation);
 
             // Test the solution
@@ -385,7 +384,7 @@ fn test_AND_gate_evolution() {
             // Use threshold for binary classification
             let predicted = if output > 0.5 { 1.0 } else { 0.0 };
 
-            if (predicted - expected).abs() < 0.1 {
+            if ((predicted - expected) as f32).abs() < 0.1 {
                 correct += 1.0;
             }
         }

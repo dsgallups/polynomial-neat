@@ -207,7 +207,7 @@ fn test_single_input_variations() {
     let network = topology.to_simple_network();
 
     let base_inputs = vec![1.0, 1.0, 1.0];
-    let base_output: Vec<f32> = network.predict(&base_inputs).collect();
+    let _base_output: Vec<f32> = network.predict(&base_inputs).collect();
 
     // Change each input individually
     for i in 0..3 {
