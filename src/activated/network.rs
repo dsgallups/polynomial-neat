@@ -99,7 +99,7 @@ fn all_outputs_have_at_least_one_input() {
         //fs::write(format!("./outputs/org_{}.dbg", generation), debug_info).unwrap();
 
         running_network = running_topology.to_network();
-        let result = running_network.predict(&[1., 5.]).collect::<Vec<f32>>();
+        let _result = running_network.predict(&[1., 5.]).collect::<Vec<f32>>();
 
         for output in running_network.output_layer.iter() {
             let output = output.read().unwrap();
