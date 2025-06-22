@@ -7,7 +7,7 @@ use rand::Rng;
 use tracing::error;
 use uuid::Uuid;
 
-use crate::poly::prelude::*;
+use crate::prelude::*;
 
 #[derive(Clone, Debug)]
 /// Represents the topology (structure) of a polynomial neural network.
@@ -23,8 +23,8 @@ use crate::poly::prelude::*;
 /// # Example
 ///
 /// ```rust
-/// use polynomial_neat::poly::prelude::*;
-/// use polynomial_neat::poly::topology::mutation::MutationChances;
+/// use polynomial_neat::prelude::*;
+/// use polynomial_neat::topology::mutation::MutationChances;
 ///
 /// // Create a network with 3 inputs and 2 outputs
 /// let mutations = MutationChances::new(50);

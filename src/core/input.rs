@@ -15,7 +15,7 @@
 //! # Example
 //!
 //! ```
-//! use polynomial_neat::poly::core::input::PolyInput;
+//! use polynomial_neat::core::input::PolyInput;
 //! use rand::SeedableRng;
 //! use rand::rngs::StdRng;
 //!
@@ -52,7 +52,7 @@ use rand::Rng;
 /// # Example
 ///
 /// ```
-/// use polynomial_neat::poly::core::input::PolyInput;
+/// use polynomial_neat::core::input::PolyInput;
 ///
 /// // Using neuron IDs as integers
 /// let input1 = PolyInput::new(42, 0.5, 1);
@@ -79,7 +79,7 @@ impl<I> PolyInput<I> {
     /// # Example
     ///
     /// ```
-    /// use polynomial_neat::poly::core::input::PolyInput;
+    /// use polynomial_neat::core::input::PolyInput;
     ///
     /// let input = PolyInput::new(5, -0.8, 2);
     /// assert_eq!(*input.input(), 5);
@@ -107,7 +107,7 @@ impl<I> PolyInput<I> {
     /// # Example
     ///
     /// ```
-    /// use polynomial_neat::poly::core::input::PolyInput;
+    /// use polynomial_neat::core::input::PolyInput;
     /// use rand::SeedableRng;
     /// use rand::rngs::StdRng;
     ///
@@ -131,7 +131,7 @@ impl<I> PolyInput<I> {
     /// # Example
     ///
     /// ```
-    /// use polynomial_neat::poly::core::input::PolyInput;
+    /// use polynomial_neat::core::input::PolyInput;
     ///
     /// let input = PolyInput::new("neuron-a", 0.5, 1);
     /// assert_eq!(input.input(), &"neuron-a");
@@ -145,7 +145,7 @@ impl<I> PolyInput<I> {
     /// # Example
     ///
     /// ```
-    /// use polynomial_neat::poly::core::input::PolyInput;
+    /// use polynomial_neat::core::input::PolyInput;
     ///
     /// let input = PolyInput::new(1, 0.75, 2);
     /// assert_eq!(input.weight(), 0.75);
@@ -165,7 +165,7 @@ impl<I> PolyInput<I> {
     /// # Example
     ///
     /// ```
-    /// use polynomial_neat::poly::core::input::PolyInput;
+    /// use polynomial_neat::core::input::PolyInput;
     ///
     /// let mut input = PolyInput::new(1, 0.5, 1);
     /// input.adjust_weight(0.2);
@@ -184,7 +184,7 @@ impl<I> PolyInput<I> {
     /// # Example
     ///
     /// ```
-    /// use polynomial_neat::poly::core::input::PolyInput;
+    /// use polynomial_neat::core::input::PolyInput;
     ///
     /// let input = PolyInput::new(1, 0.5, 3);
     /// assert_eq!(input.exponent(), 3);
@@ -205,7 +205,7 @@ impl<I> PolyInput<I> {
     /// # Example
     ///
     /// ```
-    /// use polynomial_neat::poly::core::input::PolyInput;
+    /// use polynomial_neat::core::input::PolyInput;
     ///
     /// let mut input = PolyInput::new(1, 0.5, 1);
     /// input.adjust_exp(1);

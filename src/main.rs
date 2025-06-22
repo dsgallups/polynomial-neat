@@ -2,7 +2,7 @@ use std::io::{self, Write};
 
 use burn::backend::Cuda;
 // use burn::backend::{Cuda, Wgpu};
-use polynomial_neat::poly::{
+use polynomial_neat::{
     burn_net::network::BurnNetwork, prelude::*, topology::mutation::MutationChances,
 };
 use rand::{SeedableRng, rngs::StdRng};

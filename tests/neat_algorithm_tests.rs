@@ -8,8 +8,8 @@
 
 use std::cmp::Ordering;
 
-use polynomial_neat::poly::prelude::*;
-use polynomial_neat::poly::topology::mutation::MutationChances;
+use polynomial_neat::prelude::*;
+use polynomial_neat::topology::mutation::MutationChances;
 use rand::SeedableRng;
 use rand::rngs::StdRng;
 use rayon::iter::{IntoParallelRefMutIterator, ParallelIterator};

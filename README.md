@@ -35,8 +35,8 @@ polynomial-neat = { version = "0.1.0", features = ["wgpu"] }
 ## Quick Start
 
 ```rust
-use polynomial_neat::poly::prelude::*;
-use polynomial_neat::poly::topology::mutation::MutationChances;
+use polynomial_neat::prelude::*;
+use polynomial_neat::topology::mutation::MutationChances;
 
 fn main() {
     // Configure mutation parameters
@@ -108,8 +108,8 @@ Networks evolve through several types of mutations:
 ### XOR Problem
 
 ```rust
-use polynomial_neat::poly::prelude::*;
-use polynomial_neat::poly::topology::mutation::MutationChances;
+use polynomial_neat::prelude::*;
+use polynomial_neat::topology::mutation::MutationChances;
 
 fn evaluate_xor(network: &SimplePolyNetwork) -> f32 {
     let test_cases = [
@@ -157,8 +157,8 @@ fn main() {
 ### GPU-Accelerated Networks
 
 ```rust
-use polynomial_neat::poly::prelude::*;
-use polynomial_neat::poly::burn_net::network::BurnNetwork;
+use polynomial_neat::prelude::*;
+use polynomial_neat::burn_net::network::BurnNetwork;
 use burn::backend::Cuda;
 
 fn main() {
@@ -183,8 +183,8 @@ fn main() {
 ### Custom Mutation Strategy
 
 ```rust
-use polynomial_neat::poly::prelude::*;
-use polynomial_neat::poly::topology::mutation::MutationChances;
+use polynomial_neat::prelude::*;
+use polynomial_neat::topology::mutation::MutationChances;
 
 fn main() {
     // Start with aggressive topology changes

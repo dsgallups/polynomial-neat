@@ -21,9 +21,9 @@
 //! # Example
 //!
 //! ```
-//! use polynomial_neat::poly::core::neuron::PolyNeuronInner;
-//! use polynomial_neat::poly::core::neuron_type::{PolyProps, PropsType};
-//! use polynomial_neat::poly::core::input::PolyInput;
+//! use polynomial_neat::core::neuron::PolyNeuronInner;
+//! use polynomial_neat::core::neuron_type::{PolyProps, PropsType};
+//! use polynomial_neat::core::input::PolyInput;
 //!
 //! // Create an input neuron (no properties needed)
 //! let input_neuron = PolyNeuronInner::new(1, None);
@@ -36,7 +36,7 @@
 //! assert!(hidden_neuron.is_hidden());
 //! ```
 
-use crate::poly::prelude::*;
+use crate::prelude::*;
 
 /// Core neuron structure for polynomial neural networks.
 ///
@@ -51,9 +51,9 @@ use crate::poly::prelude::*;
 /// # Example
 ///
 /// ```
-/// use polynomial_neat::poly::core::neuron::PolyNeuronInner;
-/// use polynomial_neat::poly::core::neuron_type::PolyProps;
-/// use polynomial_neat::poly::core::input::PolyInput;
+/// use polynomial_neat::core::neuron::PolyNeuronInner;
+/// use polynomial_neat::core::neuron_type::PolyProps;
+/// use polynomial_neat::core::input::PolyInput;
 ///
 /// // Simple neuron with integer ID
 /// let neuron = PolyNeuronInner::new(42, None);
@@ -81,8 +81,8 @@ impl<N, I> PolyNeuronInner<N, I> {
     /// # Example
     ///
     /// ```
-    /// use polynomial_neat::poly::core::neuron::PolyNeuronInner;
-    /// use polynomial_neat::poly::core::neuron_type::PolyProps;
+    /// use polynomial_neat::core::neuron::PolyNeuronInner;
+    /// use polynomial_neat::core::neuron_type::PolyProps;
     ///
     /// // Input neuron (no properties)
     /// let input = PolyNeuronInner::new("input-1", None);
@@ -108,9 +108,9 @@ impl<N, I> PolyNeuronInner<N, I> {
     /// # Example
     ///
     /// ```
-    /// use polynomial_neat::poly::core::neuron::PolyNeuronInner;
-    /// use polynomial_neat::poly::core::neuron_type::PolyProps;
-    /// use polynomial_neat::poly::core::input::PolyInput;
+    /// use polynomial_neat::core::neuron::PolyNeuronInner;
+    /// use polynomial_neat::core::neuron_type::PolyProps;
+    /// use polynomial_neat::core::input::PolyInput;
     ///
     /// // Input neuron has no inputs
     /// let input = PolyNeuronInner::new(1, None);
@@ -136,8 +136,8 @@ impl<N, I> PolyNeuronInner<N, I> {
     /// # Example
     ///
     /// ```
-    /// use polynomial_neat::poly::core::neuron::PolyNeuronInner;
-    /// use polynomial_neat::poly::core::neuron_type::PolyProps;
+    /// use polynomial_neat::core::neuron::PolyNeuronInner;
+    /// use polynomial_neat::core::neuron_type::PolyProps;
     ///
     /// let input = PolyNeuronInner::new(1, None);
     /// assert!(input.props().is_none());
@@ -160,8 +160,8 @@ impl<N, I> PolyNeuronInner<N, I> {
     /// # Example
     ///
     /// ```
-    /// use polynomial_neat::poly::core::neuron::PolyNeuronInner;
-    /// use polynomial_neat::poly::core::neuron_type::{PolyProps, NeuronType};
+    /// use polynomial_neat::core::neuron::PolyNeuronInner;
+    /// use polynomial_neat::core::neuron_type::{PolyProps, NeuronType};
     ///
     /// let input = PolyNeuronInner::new(1, None);
     /// assert_eq!(input.neuron_type(), NeuronType::input());
@@ -192,7 +192,7 @@ impl<N, I> PolyNeuronInner<N, I> {
     /// # Example
     ///
     /// ```
-    /// use polynomial_neat::poly::core::neuron::PolyNeuronInner;
+    /// use polynomial_neat::core::neuron::PolyNeuronInner;
     ///
     /// let input = PolyNeuronInner::new(1, None);
     /// assert!(input.is_input());
@@ -208,8 +208,8 @@ impl<N, I> PolyNeuronInner<N, I> {
     /// # Example
     ///
     /// ```
-    /// use polynomial_neat::poly::core::neuron::PolyNeuronInner;
-    /// use polynomial_neat::poly::core::neuron_type::PolyProps;
+    /// use polynomial_neat::core::neuron::PolyNeuronInner;
+    /// use polynomial_neat::core::neuron_type::PolyProps;
     ///
     /// let hidden = PolyNeuronInner::new(2, Some(PolyProps::hidden(vec![])));
     /// assert!(!hidden.is_input());
@@ -225,8 +225,8 @@ impl<N, I> PolyNeuronInner<N, I> {
     /// # Example
     ///
     /// ```
-    /// use polynomial_neat::poly::core::neuron::PolyNeuronInner;
-    /// use polynomial_neat::poly::core::neuron_type::PolyProps;
+    /// use polynomial_neat::core::neuron::PolyNeuronInner;
+    /// use polynomial_neat::core::neuron_type::PolyProps;
     ///
     /// let output = PolyNeuronInner::new(3, Some(PolyProps::output(vec![])));
     /// assert!(!output.is_input());
@@ -259,7 +259,7 @@ impl<N, I> PolyNeuronInner<N, I> {
 /// # Example Implementation
 ///
 /// ```
-/// use polynomial_neat::poly::core::neuron::{PolyNeuronInner, Neuron};
+/// use polynomial_neat::core::neuron::{PolyNeuronInner, Neuron};
 ///
 /// struct MyNeuron {
 ///     inner: PolyNeuronInner<u32, u32>,

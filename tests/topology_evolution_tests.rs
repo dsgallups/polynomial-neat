@@ -6,8 +6,8 @@
 //! - Mutations produce valid, executable networks
 //! - Edge cases in evolution are handled properly
 
-use polynomial_neat::poly::prelude::*;
-use polynomial_neat::poly::topology::mutation::MutationChances;
+use polynomial_neat::prelude::*;
+use polynomial_neat::topology::mutation::MutationChances;
 use rand::SeedableRng;
 use rand::rngs::StdRng;
 use std::collections::HashSet;

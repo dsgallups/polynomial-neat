@@ -1,5 +1,5 @@
 use super::{basis_prime::BasisTemplate, coeff::Coefficients, get_topology_polynomials};
-use crate::poly::{
+use crate::{
     burn_net::{
         basis_prime::basis_from_poly_list,
         expander::{Polynomial, Variable},
@@ -36,9 +36,9 @@ use uuid::Uuid;
 /// # Example
 ///
 /// ```rust
-/// use polynomial_neat::poly::prelude::*;
-/// use polynomial_neat::poly::burn_net::network::BurnNetwork;
-/// use polynomial_neat::poly::topology::mutation::MutationChances;
+/// use polynomial_neat::prelude::*;
+/// use polynomial_neat::burn_net::network::BurnNetwork;
+/// use polynomial_neat::topology::mutation::MutationChances;
 /// use burn::backend::NdArray;
 ///
 /// // Create a topology
@@ -77,9 +77,9 @@ impl<B: Backend> BurnNetwork<B> {
     /// # Example
     ///
     /// ```rust
-    /// # use polynomial_neat::poly::prelude::*;
-    /// # use polynomial_neat::poly::burn_net::network::BurnNetwork;
-    /// # use polynomial_neat::poly::topology::mutation::MutationChances;
+    /// # use polynomial_neat::prelude::*;
+    /// # use polynomial_neat::burn_net::network::BurnNetwork;
+    /// # use polynomial_neat::topology::mutation::MutationChances;
     /// use burn::backend::NdArray;
     ///
     /// let mutations = MutationChances::new(50);
@@ -144,9 +144,9 @@ impl<B: Backend> BurnNetwork<B> {
     /// # Example
     ///
     /// ```rust
-    /// # use polynomial_neat::poly::prelude::*;
-    /// # use polynomial_neat::poly::burn_net::network::BurnNetwork;
-    /// # use polynomial_neat::poly::topology::mutation::MutationChances;
+    /// # use polynomial_neat::prelude::*;
+    /// # use polynomial_neat::burn_net::network::BurnNetwork;
+    /// # use polynomial_neat::topology::mutation::MutationChances;
     /// # use burn::backend::NdArray;
     /// # let mutations = MutationChances::new(50);
     /// # let topology = PolyNetworkTopology::new(2, 1, mutations, &mut rand::rng());

@@ -1,6 +1,6 @@
 use std::collections::HashSet;
 
-use crate::poly::{burn_net::network::BurnNetwork, prelude::*};
+use crate::{burn_net::network::BurnNetwork, prelude::*};
 use burn::backend::NdArray;
 fn _test_dupes() {
     let mutation_chances = MutationChances::new_from_raw(3, 80., 50., 5., 60., 20.);
@@ -21,7 +21,7 @@ fn _test_dupes() {
 }
 
 fn _test_two() {
-    use crate::{poly::prelude::*, poly::topology::mutation::MutationChances};
+    use crate::{prelude::*, topology::mutation::MutationChances};
     let mutation_chances = MutationChances::new_from_raw(3, 80., 50., 5., 60., 20.);
 
     let mut running_topology = PolyNetworkTopology::new(2, 2, mutation_chances, &mut rand::rng());
@@ -61,7 +61,7 @@ fn _test_two() {
 }
 
 fn _test_inf() {
-    use crate::{poly::prelude::*, poly::topology::mutation::MutationChances};
+    use crate::{prelude::*, topology::mutation::MutationChances};
     use tracing::info;
     tracing_subscriber::fmt()
         .with_max_level(tracing::Level::INFO)

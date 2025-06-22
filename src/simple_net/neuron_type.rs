@@ -1,5 +1,5 @@
 use std::sync::{Arc, RwLock};
 
-use crate::poly::prelude::*;
+use crate::prelude::*;
 
 pub type NeuronProps = PolyProps<Arc<RwLock<SimpleNeuron>>>;
