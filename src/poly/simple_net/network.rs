@@ -28,8 +28,8 @@ use crate::poly::prelude::*;
 /// # Example
 ///
 /// ```rust
-/// use burn_neat::poly::prelude::*;
-/// use burn_neat::poly::topology::mutation::MutationChances;
+/// use polynomial_neat::poly::prelude::*;
+/// use polynomial_neat::poly::topology::mutation::MutationChances;
 ///
 /// // Create a topology
 /// let mutations = MutationChances::new(50);
@@ -69,8 +69,8 @@ impl SimplePolyNetwork {
     ///
     /// # Example
     /// ```rust
-    /// # use burn_neat::poly::prelude::*;
-    /// # use burn_neat::poly::topology::mutation::MutationChances;
+    /// # use polynomial_neat::poly::prelude::*;
+    /// # use polynomial_neat::poly::topology::mutation::MutationChances;
     /// # let mutations = MutationChances::new(50);
     /// # let topology = PolyNetworkTopology::new(2, 1, mutations, &mut rand::rng());
     /// # let network = topology.to_simple_network();
@@ -130,7 +130,7 @@ impl SimplePolyNetwork {
     ///
     /// # Example
     /// ```rust
-    /// # use burn_neat::poly::prelude::*;
+    /// # use polynomial_neat::poly::prelude::*;
     /// # use std::sync::{Arc, RwLock};
     /// # use uuid::Uuid;
     /// // Create neurons manually
@@ -162,8 +162,8 @@ impl SimplePolyNetwork {
     ///
     /// # Example
     /// ```rust
-    /// # use burn_neat::poly::prelude::*;
-    /// # use burn_neat::poly::topology::mutation::MutationChances;
+    /// # use polynomial_neat::poly::prelude::*;
+    /// # use polynomial_neat::poly::topology::mutation::MutationChances;
     /// # let mutations = MutationChances::new(50);
     /// # let topology = PolyNetworkTopology::new(2, 1, mutations, &mut rand::rng());
     /// # let network = topology.to_simple_network();
@@ -356,8 +356,8 @@ impl SimplePolyNetwork {
     ///
     /// # Example
     /// ```rust
-    /// # use burn_neat::poly::prelude::*;
-    /// # use burn_neat::poly::topology::mutation::MutationChances;
+    /// # use polynomial_neat::poly::prelude::*;
+    /// # use polynomial_neat::poly::topology::mutation::MutationChances;
     /// let mutations = MutationChances::new(50);
     /// let topology = PolyNetworkTopology::new(3, 2, mutations, &mut rand::rng());
     ///

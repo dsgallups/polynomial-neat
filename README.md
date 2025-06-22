@@ -1,9 +1,9 @@
-# burn-neat
+# polynomial-neat
 
 A high-performance Rust implementation of NEAT (NeuroEvolution of Augmenting Topologies) using the Burn deep learning framework. This crate provides a novel extension to NEAT with polynomial activation functions, allowing networks to evolve both their topology and activation function shapes.
 
-[![Crates.io](https://img.shields.io/crates/v/burn-neat.svg)](https://crates.io/crates/burn-neat)
-[![Documentation](https://docs.rs/burn-neat/badge.svg)](https://docs.rs/burn-neat)
+[![Crates.io](https://img.shields.io/crates/v/polynomial-neat.svg)](https://crates.io/crates/polynomial-neat)
+[![Documentation](https://docs.rs/polynomial-neat/badge.svg)](https://docs.rs/polynomial-neat)
 [![License](https://img.shields.io/badge/license-MIT%2FApache--2.0-blue.svg)](LICENSE)
 
 ## Features
@@ -20,23 +20,23 @@ Add this to your `Cargo.toml`:
 
 ```toml
 [dependencies]
-burn-neat = "0.1.0"
+polynomial-neat = "0.1.0"
 ```
 
 For GPU support, enable the appropriate features:
 
 ```toml
 [dependencies]
-burn-neat = { version = "0.1.0", features = ["cuda"] }
+polynomial-neat = { version = "0.1.0", features = ["cuda"] }
 # or
-burn-neat = { version = "0.1.0", features = ["wgpu"] }
+polynomial-neat = { version = "0.1.0", features = ["wgpu"] }
 ```
 
 ## Quick Start
 
 ```rust
-use burn_neat::poly::prelude::*;
-use burn_neat::poly::topology::mutation::MutationChances;
+use polynomial_neat::poly::prelude::*;
+use polynomial_neat::poly::topology::mutation::MutationChances;
 
 fn main() {
     // Configure mutation parameters
@@ -51,9 +51,9 @@ fn main() {
 
     // Create a network with 2 inputs and 1 output
     let mut topology = PolyNetworkTopology::new(
-        2, 
-        1, 
-        mutations, 
+        2,
+        1,
+        mutations,
         &mut rand::rng()
     );
 
@@ -61,13 +61,13 @@ fn main() {
     for generation in 0..10 {
         // Mutate the topology
         topology = topology.replicate(&mut rand::rng());
-        
+
         // Convert to executable network
         let network = topology.to_simple_network();
-        
+
         // Evaluate the network
         let output: Vec<f32> = network.predict(&[1.0, 0.5]).collect();
-        
+
         println!("Generation {}: Output = {:?}", generation, output);
     }
 }
@@ -80,7 +80,8 @@ fn main() {
 Each neuron in the network computes its output using a polynomial activation function:
 
 ```text
-output = Σ(weight_i * input_i^exponent_i) + bias
+(TODO: this needs to be rewritten).
+output = ΣkΣi(weight_i_k * input_k^exponent_i_k)
 ```
 
 This allows the network to learn complex non-linear transformations by evolving both the weights and exponents.
@@ -107,8 +108,8 @@ Networks evolve through several types of mutations:
 ### XOR Problem
 
 ```rust
-use burn_neat::poly::prelude::*;
-use burn_neat::poly::topology::mutation::MutationChances;
+use polynomial_neat::poly::prelude::*;
+use polynomial_neat::poly::topology::mutation::MutationChances;
 
 fn evaluate_xor(network: &SimplePolyNetwork) -> f32 {
     let test_cases = [
@@ -117,13 +118,13 @@ fn evaluate_xor(network: &SimplePolyNetwork) -> f32 {
         ([1.0, 0.0], 1.0),
         ([1.0, 1.0], 0.0),
     ];
-    
+
     let mut error = 0.0;
     for (inputs, expected) in test_cases.iter() {
         let output: Vec<f32> = network.predict(inputs).collect();
         error += (output[0] - expected).powi(2);
     }
-    
+
     4.0 - error // Higher is better
 }
 
@@ -131,20 +132,20 @@ fn main() {
     let mutations = MutationChances::new_from_raw(3, 80.0, 50.0, 5.0, 60.0, 20.0);
     let mut best_topology = PolyNetworkTopology::new(2, 1, mutations, &mut rand::rng());
     let mut best_fitness = 0.0;
-    
+
     for generation in 0..100 {
         // Create offspring
         let offspring = best_topology.replicate(&mut rand::rng());
         let network = offspring.to_simple_network();
         let fitness = evaluate_xor(&network);
-        
+
         // Keep if better
         if fitness > best_fitness {
             best_topology = offspring;
             best_fitness = fitness;
             println!("Generation {}: Fitness = {}", generation, fitness);
         }
-        
+
         if best_fitness > 3.9 {
             println!("Solution found!");
             break;
@@ -156,8 +157,8 @@ fn main() {
 ### GPU-Accelerated Networks
 
 ```rust
-use burn_neat::poly::prelude::*;
-use burn_neat::poly::burn_net::network::BurnNetwork;
+use polynomial_neat::poly::prelude::*;
+use polynomial_neat::poly::burn_net::network::BurnNetwork;
 use burn::backend::Cuda;
 
 fn main() {
@@ -166,15 +167,15 @@ fn main() {
     let topology = PolyNetworkTopology::new_thoroughly_connected(
         4, 2, mutations, &mut rand::rng()
     );
-    
+
     // Create GPU-accelerated network
     let device = burn::backend::cuda::CudaDevice::default();
     let network = BurnNetwork::<Cuda>::from_topology(&topology, device);
-    
+
     // Run inference on GPU
     let inputs = vec![1.0, 2.0, 3.0, 4.0];
     let outputs = network.predict(&inputs);
-    
+
     println!("GPU outputs: {:?}", outputs);
 }
 ```
@@ -182,8 +183,8 @@ fn main() {
 ### Custom Mutation Strategy
 
 ```rust
-use burn_neat::poly::prelude::*;
-use burn_neat::poly::topology::mutation::MutationChances;
+use polynomial_neat::poly::prelude::*;
+use polynomial_neat::poly::topology::mutation::MutationChances;
 
 fn main() {
     // Start with aggressive topology changes
@@ -195,9 +196,9 @@ fn main() {
         30.0,  // Low weight mutation
         10.0   // Low exponent mutation
     );
-    
+
     let mut topology = PolyNetworkTopology::new(3, 2, mutations, &mut rand::rng());
-    
+
     // Evolve with changing strategy
     for generation in 0..100 {
         if generation == 50 {
@@ -205,8 +206,8 @@ fn main() {
             mutations = MutationChances::new_from_raw(
                 2,     // Fewer mutations
                 10.0,  // Low topology changes
-                10.0,  
-                5.0,   
+                10.0,
+                5.0,
                 80.0,  // High weight mutation for fine-tuning
                 60.0   // High exponent mutation
             );
@@ -215,9 +216,9 @@ fn main() {
                 mutations
             );
         }
-        
+
         topology = topology.replicate(&mut rand::rng());
-        
+
         let network = topology.to_simple_network();
         println!("Generation {}: {} neurons", generation, network.num_nodes());
     }
@@ -265,9 +266,9 @@ Contributions are welcome! Please feel free to submit a Pull Request. For major 
 If you use this library in your research, please cite:
 
 ```bibtex
-@software{burn-neat,
+@software{polynomial-neat,
   author = {Gallups, Daniel},
-  title = {burn-neat: Polynomial NEAT in Rust},
+  title = {polynomial-neat: Polynomial NEAT in Rust},
   url = {https://github.com/dsgallups/polynomial-neat},
   year = {2024}
 }

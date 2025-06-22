@@ -22,7 +22,7 @@ candle-nn = "0.9.1"
 **After:**
 ```toml
 [package]
-name = "burn-neat"
+name = "polynomial-neat"
 
 [dependencies]
 burn = { version = "0.17.1", features = ["ndarray", "wgpu"] }
@@ -120,7 +120,7 @@ use candle_neat::{activated::prelude::*, topology::mutation::MutationChances};
 
 **After:**
 ```rust
-use burn_neat::{activated::prelude::*, topology::mutation::MutationChances};
+use polynomial_neat::{activated::prelude::*, topology::mutation::MutationChances};
 ```
 
 ### 7. Error Handling

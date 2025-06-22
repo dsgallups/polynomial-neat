@@ -23,8 +23,8 @@ use crate::poly::prelude::*;
 /// # Example
 ///
 /// ```rust
-/// use burn_neat::poly::prelude::*;
-/// use burn_neat::poly::topology::mutation::MutationChances;
+/// use polynomial_neat::poly::prelude::*;
+/// use polynomial_neat::poly::topology::mutation::MutationChances;
 ///
 /// // Create a network with 3 inputs and 2 outputs
 /// let mutations = MutationChances::new(50);

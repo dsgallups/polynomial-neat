@@ -490,20 +490,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "burn-neat"
-version = "0.1.0"
-dependencies = [
- "burn",
- "fnv",
- "pretty_assertions",
- "rand 0.9.1",
- "rayon",
- "tracing",
- "tracing-subscriber",
- "uuid",
-]
-
-[[package]]
 name = "burn-rocm"
 version = "0.17.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -3120,6 +3106,20 @@ dependencies = [
  "fdeflate",
  "flate2",
  "miniz_oxide",
+]
+
+[[package]]
+name = "polynomial-neat"
+version = "0.1.0"
+dependencies = [
+ "burn",
+ "fnv",
+ "pretty_assertions",
+ "rand 0.9.1",
+ "rayon",
+ "tracing",
+ "tracing-subscriber",
+ "uuid",
 ]
 
 [[package]]

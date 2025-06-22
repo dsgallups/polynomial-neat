@@ -22,7 +22,7 @@
 //! # Example
 //!
 //! ```
-//! use burn_neat::poly::core::activation::{Bias, Exponent};
+//! use polynomial_neat::poly::core::activation::{Bias, Exponent};
 //! use rand::SeedableRng;
 //! use rand::rngs::StdRng;
 //!
@@ -48,7 +48,7 @@ use rand::Rng;
 /// # Example
 ///
 /// ```
-/// use burn_neat::poly::core::activation::Bias;
+/// use polynomial_neat::poly::core::activation::Bias;
 /// use rand::thread_rng;
 ///
 /// let bias_value = Bias::rand(&mut thread_rng());
@@ -73,7 +73,7 @@ impl Bias {
     /// # Example
     ///
     /// ```
-    /// use burn_neat::poly::core::activation::Bias;
+    /// use polynomial_neat::poly::core::activation::Bias;
     /// use rand::SeedableRng;
     /// use rand::rngs::StdRng;
     ///
@@ -95,7 +95,7 @@ impl Bias {
 /// # Example
 ///
 /// ```
-/// use burn_neat::poly::core::activation::Exponent;
+/// use polynomial_neat::poly::core::activation::Exponent;
 /// use rand::thread_rng;
 ///
 /// let exponent = Exponent::rand(&mut thread_rng());
@@ -128,7 +128,7 @@ impl Exponent {
     /// # Example
     ///
     /// ```
-    /// use burn_neat::poly::core::activation::Exponent;
+    /// use polynomial_neat::poly::core::activation::Exponent;
     /// use rand::SeedableRng;
     /// use rand::rngs::StdRng;
     ///

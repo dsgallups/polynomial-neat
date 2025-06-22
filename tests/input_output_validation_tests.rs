@@ -6,8 +6,8 @@
 //! - Edge cases are handled gracefully
 //! - Invalid inputs are properly rejected or handled
 
-use burn_neat::poly::prelude::*;
-use burn_neat::poly::topology::mutation::MutationChances;
+use polynomial_neat::poly::prelude::*;
+use polynomial_neat::poly::topology::mutation::MutationChances;
 use rand::SeedableRng;
 use rand::rngs::StdRng;
 

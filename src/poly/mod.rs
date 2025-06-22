@@ -29,8 +29,8 @@
 //! ## Example
 //!
 //! ```rust
-//! use burn_neat::poly::prelude::*;
-//! use burn_neat::poly::topology::mutation::MutationChances;
+//! use polynomial_neat::poly::prelude::*;
+//! use polynomial_neat::poly::topology::mutation::MutationChances;
 //!
 //! // Create mutation parameters
 //! let mutations = MutationChances::new_from_raw(3, 80.0, 50.0, 5.0, 60.0, 20.0);
@@ -59,8 +59,8 @@
 //! using polynomial NEAT:
 //!
 //! ```rust
-//! use burn_neat::poly::prelude::*;
-//! use burn_neat::poly::topology::mutation::MutationChances;
+//! use polynomial_neat::poly::prelude::*;
+//! use polynomial_neat::poly::topology::mutation::MutationChances;
 //!
 //! // Define fitness function for XOR
 //! fn evaluate_xor(network: &SimplePolyNetwork) -> f32 {
@@ -172,7 +172,7 @@ pub mod topology;
 ///
 /// ## Example
 /// ```rust
-/// use burn_neat::poly::prelude::*;
+/// use polynomial_neat::poly::prelude::*;
 ///
 /// // Now you have access to all common types like:
 /// // - PolyNetworkTopology

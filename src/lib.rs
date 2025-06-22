@@ -1,4 +1,4 @@
-//! # burn-neat
+//! # polynomial-neat
 //!
 //! A Rust implementation of NEAT (NeuroEvolution of Augmenting Topologies) using the Burn deep learning framework.
 //!
@@ -20,8 +20,8 @@
 //! ## Quick Start
 //!
 //! ```rust
-//! use burn_neat::poly::prelude::*;
-//! use burn_neat::poly::topology::mutation::MutationChances;
+//! use polynomial_neat::poly::prelude::*;
+//! use polynomial_neat::poly::topology::mutation::MutationChances;
 //!
 //! // Configure mutation chances for evolution
 //! let mutation_chances = MutationChances::new_from_raw(
@@ -60,8 +60,8 @@
 //!
 //! ### Random Initialization
 //! ```rust
-//! # use burn_neat::poly::prelude::*;
-//! # use burn_neat::poly::topology::mutation::MutationChances;
+//! # use polynomial_neat::poly::prelude::*;
+//! # use polynomial_neat::poly::topology::mutation::MutationChances;
 //! # let mutation_chances = MutationChances::new(50);
 //! // Creates a randomly connected network
 //! let topology = PolyNetworkTopology::new(3, 1, mutation_chances, &mut rand::rng());
@@ -69,8 +69,8 @@
 //!
 //! ### Fully Connected
 //! ```rust
-//! # use burn_neat::poly::prelude::*;
-//! # use burn_neat::poly::topology::mutation::MutationChances;
+//! # use polynomial_neat::poly::prelude::*;
+//! # use polynomial_neat::poly::topology::mutation::MutationChances;
 //! # let mutation_chances = MutationChances::new(50);
 //! // Creates a fully connected network with all inputs connected to all outputs
 //! let topology = PolyNetworkTopology::new_thoroughly_connected(
@@ -83,8 +83,8 @@
 //! Networks evolve through mutations controlled by `MutationChances`:
 //!
 //! ```rust
-//! # use burn_neat::poly::prelude::*;
-//! # use burn_neat::poly::topology::mutation::MutationChances;
+//! # use polynomial_neat::poly::prelude::*;
+//! # use polynomial_neat::poly::topology::mutation::MutationChances;
 //! let mutation_chances = MutationChances::new_from_raw(
 //!     5,      // max mutations
 //!     80.0,   // split connection chance (add neuron)
@@ -100,9 +100,9 @@
 //! For GPU acceleration, use the Burn backend networks:
 //!
 //! ```rust
-//! # use burn_neat::poly::prelude::*;
-//! # use burn_neat::poly::topology::mutation::MutationChances;
-//! use burn_neat::poly::burn_net::network::BurnNetwork;
+//! # use polynomial_neat::poly::prelude::*;
+//! # use polynomial_neat::poly::topology::mutation::MutationChances;
+//! use polynomial_neat::poly::burn_net::network::BurnNetwork;
 //! use burn::backend::NdArray;
 //!
 //! # let mutation_chances = MutationChances::new(50);
