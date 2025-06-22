@@ -82,7 +82,7 @@ impl PolyNetworkTopology {
                         let topology_index = rng.random_range(0..input_neurons.len());
                         let input = input_neurons.get(topology_index).unwrap();
                         (
-                            PolyInputTopology::new_rand(Arc::downgrade(input), &mut rand::rng()),
+                            PolyInputTopology::new_rand(Arc::downgrade(input), rng),
                             topology_index,
                         )
                     })

@@ -10,7 +10,6 @@ use burn_neat::poly::prelude::*;
 use burn_neat::poly::topology::mutation::MutationChances;
 use rand::SeedableRng;
 use rand::rngs::StdRng;
-use rayon::prelude::*;
 
 /// Helper function to create a deterministic RNG
 fn test_rng() -> StdRng {
@@ -72,7 +71,7 @@ impl Population {
     where
         F: Fn(&SimplePolyNetwork) -> f32 + Sync,
     {
-        self.individuals.par_iter_mut().for_each(|individual| {
+        self.individuals.iter_mut().for_each(|individual| {
             individual.evaluate(&fitness_fn);
         });
     }
@@ -153,14 +152,7 @@ fn test_xor_evolution() {
     let mut rng = test_rng();
 
     // Configure mutations for XOR problem
-    let mutations = MutationChances::new_from_raw(
-        80,   // 80% mutation rate
-        40.0, // Add neurons
-        30.0, // Add connections
-        5.0,  // Remove neurons (low)
-        20.0, // Mutate weights
-        5.0,  // Mutate exponents (low)
-    );
+    let mutations = MutationChances::new_from_raw(80, 40.0, 30.0, 5.0, 20.0, 5.0);
 
     // Create population
     let mut population = Population::new(50, 2, 1, mutations, &mut rng);

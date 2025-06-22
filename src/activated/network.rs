@@ -83,16 +83,18 @@ impl Network {
 
 #[test]
 fn all_outputs_have_at_least_one_input() {
+    use rand::{SeedableRng as _, rngs::StdRng};
+    let mut rng = StdRng::seed_from_u64(12345);
     let mutation_chances = MutationChances::new_from_raw(3, 80., 50., 5., 60., 20., 10.);
 
-    let mut running_topology = NetworkTopology::new(20, 7, mutation_chances, &mut rand::rng());
+    let mut running_topology = NetworkTopology::new(20, 7, mutation_chances, &mut rng);
 
     #[allow(unused_assignments)]
     let mut running_network = running_topology.to_network();
 
     for generation in 0..100 {
         println!("generation: {}", generation);
-        running_topology = running_topology.replicate(&mut rand::rng());
+        running_topology = running_topology.replicate(&mut rng);
 
         //let debug_info = format!("{:#?}", running_topology);
 

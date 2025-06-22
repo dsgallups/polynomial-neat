@@ -35,7 +35,7 @@ impl NetworkTopology {
                         let topology_index = rng.random_range(0..input_neurons.len());
                         let input = input_neurons.get(topology_index).unwrap();
                         (
-                            InputTopology::new_rand(Arc::downgrade(input), &mut rand::rng()),
+                            InputTopology::new_rand(Arc::downgrade(input), rng),
                             topology_index,
                         )
                     })
@@ -46,7 +46,7 @@ impl NetworkTopology {
 
                 let chosen_inputs = chosen_inputs.into_iter().map(|(input, _)| input).collect();
 
-                NeuronTopology::output_rand(chosen_inputs, &mut rand::rng())
+                NeuronTopology::output_rand(chosen_inputs, rng)
             })
             .collect::<Vec<_>>();
 
@@ -77,7 +77,7 @@ impl NetworkTopology {
                     .map(|input| InputTopology::new_rand(Arc::downgrade(input), rng))
                     .collect::<Vec<_>>();
 
-                NeuronTopology::output_rand(chosen_inputs, &mut rand::rng())
+                NeuronTopology::output_rand(chosen_inputs, rng)
             })
             .collect::<Vec<_>>();
 

@@ -5,15 +5,17 @@ use burn::backend::Cuda;
 use burn_neat::poly::{
     burn_net::network::BurnNetwork, prelude::*, topology::mutation::MutationChances,
 };
+use rand::{SeedableRng, rngs::StdRng};
 use tracing::info;
 
 const MAX_GEN: i32 = 5000;
 
 fn main() {
     tracing_subscriber::fmt::init();
+    let mut rng = StdRng::seed_from_u64(12345);
     let mutation_chances = MutationChances::new_from_raw(5, 80., 50., 5., 60., 0.);
 
-    let mut running_topology = PolyNetworkTopology::new(2, 2, mutation_chances, &mut rand::rng());
+    let mut running_topology = PolyNetworkTopology::new(2, 2, mutation_chances, &mut rng);
 
     //let device = burn::backend::wgpu::WgpuDevice::DiscreteGpu(0);
     let device = burn::backend::cuda::CudaDevice::default();
