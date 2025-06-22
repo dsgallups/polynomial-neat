@@ -1,10 +1,9 @@
 use std::{
-    collections::{HashMap, HashSet},
+    collections::HashSet,
     sync::{Arc, RwLock},
 };
 
 use rand::Rng;
-use tracing::error;
 use uuid::Uuid;
 
 use crate::prelude::*;
@@ -229,7 +228,7 @@ impl PolyNetworkTopology {
         if self.neurons.len() > 1 {
             let index = rng.random_range(0..self.neurons.len());
 
-            let mut input_ids_to_check = HashMap::new();
+            //let mut input_ids_to_check = HashMap::new();
             {
                 // this grabs any inputs to the random index and pushes if the input is an input neuron
                 // confusing, but input neurons and hidden neurons can both be inputs.
@@ -237,59 +236,59 @@ impl PolyNetworkTopology {
                 if neuron_props.is_input() || neuron_props.is_output() {
                     return;
                 }
-                let Some(props) = neuron_props.props() else {
-                    return;
-                };
-                for input in props.inputs() {
-                    let input = input.input();
-                    let Some(upgrade) = input.upgrade() else {
-                        continue;
-                    };
-                    let Ok(read) = upgrade.read() else {
-                        continue;
-                    };
-                    if read.is_input() {
-                        input_ids_to_check.insert(read.id(), 0);
-                    }
-                }
+                // let Some(props) = neuron_props.props() else {
+                //     return;
+                // };
+                // for input in props.inputs() {
+                //     let input = input.input();
+                //     let Some(upgrade) = input.upgrade() else {
+                //         continue;
+                //     };
+                //     let Ok(read) = upgrade.read() else {
+                //         continue;
+                //     };
+                //     if read.is_input() {
+                //         input_ids_to_check.insert(read.id(), 0);
+                //     }
+                // }
             }
 
-            if input_ids_to_check.is_empty() {
-                self.neurons.remove(index);
-                return;
-            }
+            // if input_ids_to_check.is_empty() {
+            //     self.neurons.remove(index);
+            //     return;
+            // }
 
-            // this will iterate through all neurons to count how many nodes are connected to the input neuron
-            // that may be removed.
-            for neuron in &self.neurons {
-                let lock = neuron.read().unwrap();
+            // // this will iterate through all neurons to count how many nodes are connected to the input neuron
+            // // that may be removed.
+            // for neuron in &self.neurons {
+            //     let lock = neuron.read().unwrap();
 
-                let Some(props) = lock.props() else {
-                    //this is an input node if this else branch is hit.
-                    continue;
-                };
-                for input in props.inputs() {
-                    let input = input.input();
-                    let Some(upgrade) = input.upgrade() else {
-                        continue;
-                    };
-                    let Ok(neuron_input) = upgrade.read() else {
-                        continue;
-                    };
-                    let Some(count) = input_ids_to_check.get_mut(&neuron_input.id()) else {
-                        continue;
-                    };
-                    *count += 1;
-                }
-            }
+            //     let Some(props) = lock.props() else {
+            //         //this is an input node if this else branch is hit.
+            //         continue;
+            //     };
+            //     for input in props.inputs() {
+            //         let input = input.input();
+            //         let Some(upgrade) = input.upgrade() else {
+            //             continue;
+            //         };
+            //         let Ok(neuron_input) = upgrade.read() else {
+            //             continue;
+            //         };
+            //         let Some(count) = input_ids_to_check.get_mut(&neuron_input.id()) else {
+            //             continue;
+            //         };
+            //         *count += 1;
+            //     }
+            // }
 
-            // do nothing if removing this node would remove the input from doing anything
-            for count in input_ids_to_check.into_values() {
-                if count <= 1 {
-                    error!("hit something!");
-                    return;
-                }
-            }
+            // // do nothing if removing this node would remove the input from doing anything
+            // for count in input_ids_to_check.into_values() {
+            //     if count <= 1 {
+            //         error!("hit something!");
+            //         return;
+            //     }
+            // }
 
             self.neurons.remove(index);
         }
