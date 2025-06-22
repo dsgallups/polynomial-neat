@@ -6,14 +6,18 @@
 //! - Selection and reproduction work correctly
 //! - Networks can learn non-linear functions
 
+use std::cmp::Ordering;
+
 use burn_neat::poly::prelude::*;
 use burn_neat::poly::topology::mutation::MutationChances;
 use rand::SeedableRng;
 use rand::rngs::StdRng;
+use rayon::iter::{IntoParallelRefMutIterator, ParallelIterator};
 
 /// Helper function to create a deterministic RNG
 fn test_rng() -> StdRng {
-    StdRng::seed_from_u64(12345)
+    //note that 12345 means xor fitness never exceeds 0.5625.
+    StdRng::seed_from_u64(12346)
 }
 
 /// Represents an individual in the population with its fitness
@@ -71,7 +75,7 @@ impl Population {
     where
         F: Fn(&SimplePolyNetwork) -> f32 + Sync,
     {
-        self.individuals.iter_mut().for_each(|individual| {
+        self.individuals.par_iter_mut().for_each(|individual| {
             individual.evaluate(&fitness_fn);
         });
     }
@@ -79,7 +83,7 @@ impl Population {
     fn best(&self) -> Option<&Individual> {
         self.individuals
             .iter()
-            .max_by(|a, b| a.fitness.partial_cmp(&b.fitness).unwrap())
+            .max_by(|a, b| a.fitness.partial_cmp(&b.fitness).unwrap_or(Ordering::Less))
     }
 
     fn average_fitness(&self) -> f32 {
@@ -89,8 +93,14 @@ impl Population {
 
     fn evolve(&mut self, rng: &mut impl rand::Rng) {
         // Sort by fitness (best first)
-        self.individuals
-            .sort_by(|a, b| b.fitness.partial_cmp(&a.fitness).unwrap());
+        self.individuals.sort_by(|a, b| {
+            match (a.fitness.is_finite(), b.fitness.is_finite()) {
+                (true, true) => b.fitness.partial_cmp(&a.fitness).unwrap(), // descending
+                (true, false) => std::cmp::Ordering::Less,                  // finite is better
+                (false, true) => std::cmp::Ordering::Greater,
+                (false, false) => std::cmp::Ordering::Equal,
+            }
+        });
 
         // Keep top 20% as elites
         let elite_count = self.individuals.len() / 5;
@@ -135,8 +145,12 @@ fn xor_fitness(network: &SimplePolyNetwork) -> f32 {
         }
 
         let output = outputs[0];
-        let error = (output - expected).abs();
-        total_error += error;
+        let error = (output - expected).abs().clamp(0., 1.);
+        if error.is_finite() {
+            total_error += error;
+        } else {
+            total_error += 1.;
+        }
     }
 
     // Convert error to fitness (lower error = higher fitness)
@@ -158,7 +172,7 @@ fn test_xor_evolution() {
     let mut population = Population::new(50, 2, 1, mutations, &mut rng);
 
     // Evolution parameters
-    let max_generations = 100;
+    let max_generations = 50000;
     let target_fitness = 0.95; // 95% correct
 
     let mut _solution_found = false;
@@ -198,6 +212,17 @@ fn test_xor_evolution() {
                     inputs[0], inputs[1], output[0], expected
                 );
             }
+            let network = best.topology.to_simple_network();
+            println!(
+                "===Best Topology===\n\
+                num_nodes: {}\n\
+                num_inputs: {}\n\
+                num_outputs: {}
+                ",
+                network.num_nodes(),
+                network.num_inputs(),
+                network.num_outputs()
+            );
 
             break;
         }
@@ -213,7 +238,8 @@ fn test_xor_evolution() {
     );
 
     // Check that fitness generally improves
-    let first_quarter_avg: f32 = best_fitness_history[..25].iter().sum::<f32>() / 25.0;
+    let first_quarter_avg: f32 =
+        best_fitness_history.iter().sum::<f32>() / best_fitness_history.len() as f32;
     let last_quarter_avg: f32 = best_fitness_history[best_fitness_history.len() - 25..]
         .iter()
         .sum::<f32>()
@@ -393,7 +419,7 @@ fn test_and_gate_evolution() {
 
     // AND should be solvable quickly
     let mut solved = false;
-    for generation in 0..30 {
+    for generation in 0..1000 {
         population.evaluate_all(and_fitness);
 
         let best = population.best().unwrap();

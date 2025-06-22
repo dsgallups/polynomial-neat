@@ -1,4 +1,7 @@
-use std::sync::{Arc, RwLock};
+use std::{
+    f32,
+    sync::{Arc, RwLock},
+};
 
 use crate::poly::prelude::*;
 
@@ -12,6 +15,8 @@ impl NeuronInput {
             return self.weight();
         }
 
+        //note that this can totally return inf if the value is zero. This is intentional.
+
         if let Some(cached) = {
             self.input()
                 .read()
@@ -23,6 +28,51 @@ impl NeuronInput {
         }
 
         let neuron_value = self.input().write().unwrap().activate();
+
+        // if result.is_infinite() || result.is_nan() {
+        //     println!(
+        //         "DEBUG: Fresh calculation produced inf/nan: neuron_value={}, exp={}, weight={}, result={}",
+        //         neuron_value,
+        //         self.exponent(),
+        //         self.weight(),
+        //         result
+        //     );
+        // }
+        // result
+
         neuron_value.powi(self.exponent()) * self.weight()
     }
+}
+
+#[test]
+fn ensure_inf_possible() {
+    use uuid::Uuid;
+    let neuron = Arc::new(RwLock::new(SimpleNeuron::new(
+        Uuid::new_v4(),
+        Some(NeuronProps::output(vec![PolyInput::new(
+            Arc::new(RwLock::new(SimpleNeuron::new(Uuid::new_v4(), None))),
+            0.,
+            1,
+        )])),
+    )));
+    let neuron_input = PolyInput::new(neuron, 1., -1);
+
+    let value = neuron_input.get_input_value();
+    assert_eq!(value, f32::INFINITY);
+}
+#[test]
+fn zero_to_zero_power() {
+    use uuid::Uuid;
+    let neuron = Arc::new(RwLock::new(SimpleNeuron::new(
+        Uuid::new_v4(),
+        Some(NeuronProps::output(vec![PolyInput::new(
+            Arc::new(RwLock::new(SimpleNeuron::new(Uuid::new_v4(), None))),
+            0.,
+            1,
+        )])),
+    )));
+    let neuron_input = PolyInput::new(neuron, 1., 0);
+
+    let value = neuron_input.get_input_value();
+    assert_eq!(value, 1.);
 }

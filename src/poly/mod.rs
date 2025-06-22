@@ -185,7 +185,7 @@ pub mod prelude {
     pub use super::core::{
         activation::{Bias, Exponent},
         input::PolyInput,
-        neuron::PolyNeuronInner,
+        //neuron::PolyNeuronInner,
         neuron_type::{NeuronType, PolyProps, PropsType},
     };
     pub use super::simple_net::{

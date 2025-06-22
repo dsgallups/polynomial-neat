@@ -436,7 +436,14 @@ impl PolyNetworkTopology {
                     else {
                         continue;
                     };
+
                     random_input.adjust_exp(rng.random_range(-1..=1));
+                    // let adjustment = rng.random_range(-1..=1);
+                    // let new_exp = random_input.exponent() + adjustment;
+                    // // Ensure exponent stays non-negative to avoid division by zero
+                    // if new_exp >= 0 {
+                    //     random_input.adjust_exp(adjustment);
+                    // }
                 }
             }
         }

@@ -172,7 +172,8 @@ impl<I> PolyInput<I> {
     /// assert_eq!(input.weight(), 0.7);
     ///
     /// input.adjust_weight(-0.3);
-    /// assert_eq!(input.weight(), 0.4);
+    ///
+    /// assert!((input.weight() - 0.4).abs() < std::f32::EPSILON);
     /// ```
     pub fn adjust_weight(&mut self, by: f32) {
         self.weight += by;
