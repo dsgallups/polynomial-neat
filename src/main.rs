@@ -24,7 +24,7 @@ fn main() {
     let mut step = false;
     loop {
         info!("===NEW GEN ({}) ===", generation);
-        running_topology = running_topology.replicate(&mut rand::rng());
+        running_topology = running_topology.replicate(&mut rng);
 
         //let debug_info = format!("{:#?}", running_topology);
 
@@ -80,7 +80,7 @@ fn main() {
         generation += 1;
         if generation > MAX_GEN {
             info!("Resetting");
-            running_topology = PolyNetworkTopology::new(2, 20, mutation_chances, &mut rand::rng());
+            running_topology = PolyNetworkTopology::new(2, 20, mutation_chances, &mut rng);
             generation = 0;
         }
         /*if generation > 1000 {

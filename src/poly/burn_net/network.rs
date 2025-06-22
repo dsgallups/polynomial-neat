@@ -217,7 +217,11 @@ mod tests {
 
     #[test]
     fn burn_scratch_two() {
-        let topology = PolyNetworkTopology::new(2, 2, MutationChances::none(), &mut rand::rng());
+        use rand::SeedableRng;
+        use rand::rngs::StdRng;
+
+        let mut rng = StdRng::seed_from_u64(3819234);
+        let topology = PolyNetworkTopology::new(2, 2, MutationChances::none(), &mut rng);
 
         println!("here 1");
         let device = burn::backend::ndarray::NdArrayDevice::default();
