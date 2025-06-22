@@ -2,7 +2,7 @@ use std::sync::{Arc, RwLock};
 
 use rayon::iter::{IndexedParallelIterator as _, IntoParallelRefIterator, ParallelIterator as _};
 
-use crate::poly::prelude::*;
+use crate::prelude::*;
 
 /// A simple CPU-based polynomial neural network for inference.
 ///
@@ -28,8 +28,8 @@ use crate::poly::prelude::*;
 /// # Example
 ///
 /// ```rust
-/// use polynomial_neat::poly::prelude::*;
-/// use polynomial_neat::poly::topology::mutation::MutationChances;
+/// use polynomial_neat::prelude::*;
+/// use polynomial_neat::topology::mutation::MutationChances;
 ///
 /// // Create a topology
 /// let mutations = MutationChances::new(50);
@@ -69,8 +69,8 @@ impl SimplePolyNetwork {
     ///
     /// # Example
     /// ```rust
-    /// # use polynomial_neat::poly::prelude::*;
-    /// # use polynomial_neat::poly::topology::mutation::MutationChances;
+    /// # use polynomial_neat::prelude::*;
+    /// # use polynomial_neat::topology::mutation::MutationChances;
     /// # let mutations = MutationChances::new(50);
     /// # let topology = PolyNetworkTopology::new(2, 1, mutations, &mut rand::rng());
     /// # let network = topology.to_simple_network();
@@ -130,7 +130,7 @@ impl SimplePolyNetwork {
     ///
     /// # Example
     /// ```rust
-    /// # use polynomial_neat::poly::prelude::*;
+    /// # use polynomial_neat::prelude::*;
     /// # use std::sync::{Arc, RwLock};
     /// # use uuid::Uuid;
     /// // Create neurons manually
@@ -162,8 +162,8 @@ impl SimplePolyNetwork {
     ///
     /// # Example
     /// ```rust
-    /// # use polynomial_neat::poly::prelude::*;
-    /// # use polynomial_neat::poly::topology::mutation::MutationChances;
+    /// # use polynomial_neat::prelude::*;
+    /// # use polynomial_neat::topology::mutation::MutationChances;
     /// # let mutations = MutationChances::new(50);
     /// # let topology = PolyNetworkTopology::new(2, 1, mutations, &mut rand::rng());
     /// # let network = topology.to_simple_network();
@@ -356,8 +356,8 @@ impl SimplePolyNetwork {
     ///
     /// # Example
     /// ```rust
-    /// # use polynomial_neat::poly::prelude::*;
-    /// # use polynomial_neat::poly::topology::mutation::MutationChances;
+    /// # use polynomial_neat::prelude::*;
+    /// # use polynomial_neat::topology::mutation::MutationChances;
     /// let mutations = MutationChances::new(50);
     /// let topology = PolyNetworkTopology::new(3, 2, mutations, &mut rand::rng());
     ///

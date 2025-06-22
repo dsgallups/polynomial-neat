@@ -93,8 +93,8 @@ pub const MAX_MUTATIONS: u8 = 200;
 /// # Example
 ///
 /// ```rust
-/// use polynomial_neat::poly::prelude::*;
-/// use polynomial_neat::poly::topology::mutation::MutationChances;
+/// use polynomial_neat::prelude::*;
+/// use polynomial_neat::topology::mutation::MutationChances;
 ///
 /// // Create balanced mutation chances (20% each)
 /// let balanced = MutationChances::new(50);
@@ -133,7 +133,7 @@ impl MutationChances {
     ///
     /// # Example
     /// ```rust
-    /// # use polynomial_neat::poly::topology::mutation::MutationChances;
+    /// # use polynomial_neat::topology::mutation::MutationChances;
     /// // 50% chance of mutation, with equal chances for each type
     /// let chances = MutationChances::new(50);
     /// ```
@@ -178,7 +178,7 @@ impl MutationChances {
     ///
     /// # Example
     /// ```rust
-    /// # use polynomial_neat::poly::topology::mutation::MutationChances;
+    /// # use polynomial_neat::topology::mutation::MutationChances;
     /// let chances = MutationChances::new_from_raw(
     ///     75,    // 75% chance of mutation
     ///     40.0,  // High chance for adding neurons

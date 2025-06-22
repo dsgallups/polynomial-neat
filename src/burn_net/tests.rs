@@ -1,5 +1,5 @@
 use super::{BurnNetwork, create_polynomial, expander::Polynomial, get_topology_polynomials};
-use crate::poly::{burn_net::expander::PolyComponent, prelude::*};
+use crate::{burn_net::expander::PolyComponent, prelude::*};
 use burn::backend::NdArray;
 use burn::prelude::*;
 use fnv::FnvHashMap;

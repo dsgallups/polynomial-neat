@@ -2,7 +2,7 @@ use std::sync::{Arc, RwLock};
 
 use uuid::Uuid;
 
-use crate::poly::prelude::*;
+use crate::prelude::*;
 
 /// This defines a node's topology. What does this mean?
 ///

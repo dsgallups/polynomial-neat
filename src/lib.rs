@@ -20,8 +20,8 @@
 //! ## Quick Start
 //!
 //! ```rust
-//! use polynomial_neat::poly::prelude::*;
-//! use polynomial_neat::poly::topology::mutation::MutationChances;
+//! use polynomial_neat::prelude::*;
+//! use polynomial_neat::topology::mutation::MutationChances;
 //!
 //! // Configure mutation chances for evolution
 //! let mutation_chances = MutationChances::new_from_raw(
@@ -60,8 +60,8 @@
 //!
 //! ### Random Initialization
 //! ```rust
-//! # use polynomial_neat::poly::prelude::*;
-//! # use polynomial_neat::poly::topology::mutation::MutationChances;
+//! # use polynomial_neat::prelude::*;
+//! # use polynomial_neat::topology::mutation::MutationChances;
 //! # let mutation_chances = MutationChances::new(50);
 //! // Creates a randomly connected network
 //! let topology = PolyNetworkTopology::new(3, 1, mutation_chances, &mut rand::rng());
@@ -69,8 +69,8 @@
 //!
 //! ### Fully Connected
 //! ```rust
-//! # use polynomial_neat::poly::prelude::*;
-//! # use polynomial_neat::poly::topology::mutation::MutationChances;
+//! # use polynomial_neat::prelude::*;
+//! # use polynomial_neat::topology::mutation::MutationChances;
 //! # let mutation_chances = MutationChances::new(50);
 //! // Creates a fully connected network with all inputs connected to all outputs
 //! let topology = PolyNetworkTopology::new_thoroughly_connected(
@@ -83,8 +83,8 @@
 //! Networks evolve through mutations controlled by `MutationChances`:
 //!
 //! ```rust
-//! # use polynomial_neat::poly::prelude::*;
-//! # use polynomial_neat::poly::topology::mutation::MutationChances;
+//! # use polynomial_neat::prelude::*;
+//! # use polynomial_neat::topology::mutation::MutationChances;
 //! let mutation_chances = MutationChances::new_from_raw(
 //!     5,      // max mutations
 //!     80.0,   // split connection chance (add neuron)
@@ -100,9 +100,9 @@
 //! For GPU acceleration, use the Burn backend networks:
 //!
 //! ```rust
-//! # use polynomial_neat::poly::prelude::*;
-//! # use polynomial_neat::poly::topology::mutation::MutationChances;
-//! use polynomial_neat::poly::burn_net::network::BurnNetwork;
+//! # use polynomial_neat::prelude::*;
+//! # use polynomial_neat::topology::mutation::MutationChances;
+//! use polynomial_neat::burn_net::network::BurnNetwork;
 //! use burn::backend::NdArray;
 //!
 //! # let mutation_chances = MutationChances::new(50);
@@ -122,20 +122,50 @@
 //! - [`activated`]: Traditional NEAT implementation with fixed activation functions
 //! - [`core`]: Core traits and utilities shared across implementations
 
-/// Traditional NEAT implementation with fixed activation functions.
+/// GPU-accelerated polynomial network implementation using Burn.
 ///
-/// This module provides the classic NEAT algorithm implementation with predetermined
-/// activation functions like sigmoid, tanh, ReLU, etc.
-pub mod activated;
+/// This module provides high-performance network execution on CUDA and WGPU devices.
+pub mod burn_net;
+// pub mod candle_net;  // Commented out - replaced by burn_net
 
-/// Polynomial network implementation with learnable activation functions.
+/// Core components for polynomial networks.
 ///
-/// This module extends NEAT with polynomial activation functions where the exponents
-/// can be evolved alongside the network topology. This allows for more flexible
-/// function approximation.
-pub mod poly;
+/// Includes activation functions, neuron implementations, and input handling.
+pub mod core;
+
+/// Simple CPU-based polynomial network implementation.
+///
+/// Useful for debugging, testing, and environments without GPU support.
+pub mod simple_net;
+
+/// Network topology representation and evolution.
+///
+/// Handles the structure of networks and how they mutate over generations.
+pub mod topology;
 
 mod test_utils;
 
-/// Core functionality and traits used throughout the crate.
-pub mod core;
+pub mod prelude {
+    pub use super::core::{
+        activation::{Bias, Exponent},
+        input::PolyInput,
+        //neuron::PolyNeuronInner,
+        neuron_type::{NeuronType, PolyProps, PropsType},
+    };
+    pub use super::simple_net::{
+        input::NeuronInput, network::SimplePolyNetwork, neuron::SimpleNeuron,
+        neuron_type::NeuronProps,
+    };
+    pub use super::topology::{
+        input::PolyInputTopology,
+        mutation::{MAX_MUTATIONS, MutationAction, MutationChances},
+        network::PolyNetworkTopology,
+        neuron::PolyNeuronTopology,
+        neuron_type::PolyNeuronPropsTopology,
+    };
+    #[cfg(test)]
+    pub(crate) use crate::test_utils::arc;
+}
+
+#[cfg(test)]
+mod tests;

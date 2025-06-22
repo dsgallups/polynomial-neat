@@ -7,7 +7,7 @@
 //! - Tensor operations produce expected results
 
 use burn::backend::{NdArray, ndarray::NdArrayDevice};
-use polynomial_neat::poly::{
+use polynomial_neat::{
     burn_net::network::BurnNetwork, prelude::*, topology::mutation::MutationChances,
 };
 use rand::SeedableRng;

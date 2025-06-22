@@ -1,6 +1,6 @@
 use std::sync::{Arc, RwLock, Weak};
 
-use crate::poly::prelude::*;
+use crate::prelude::*;
 
 pub type PolyInputTopology = PolyInput<Weak<RwLock<PolyNeuronTopology>>>;
 
