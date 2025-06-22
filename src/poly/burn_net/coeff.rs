@@ -39,6 +39,25 @@ impl<B: Backend> Coefficients<B> {
             }
         }
 
+        println!("[");
+        for (i, coef) in coef_vec.iter().enumerate() {
+            if i % polynomials.len() == 0 {
+                if i != 0 {
+                    println!("]");
+                }
+                print!("[");
+            }
+            if coef.is_sign_positive() {
+                print!(" {coef:.02},");
+            } else {
+                print!("{coef:.02},");
+            }
+            if i == coef_vec.len() - 1 {
+                println!("]");
+            }
+        }
+        println!("]");
+
         let data = TensorData::new(coef_vec, [polynomials.len(), basis_template.num_rows()]);
         let tensor = Tensor::from_data(data, device);
 

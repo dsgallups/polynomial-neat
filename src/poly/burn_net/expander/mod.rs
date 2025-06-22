@@ -20,9 +20,9 @@ pub struct Variable<T> {
 impl<T: fmt::Display> fmt::Display for Variable<T> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         if self.exponent == 1 {
-            write!(f, "{}", self.var)
+            write!(f, "[{}]", self.var)
         } else {
-            write!(f, "{}^{}", self.var, self.exponent)
+            write!(f, "[{}]^{}", self.var, self.exponent)
         }
     }
 }
@@ -67,6 +67,7 @@ impl<T: fmt::Display> fmt::Display for PolyComponent<T> {
         if self.weight != 1. {
             write!(f, "{}", self.weight)?;
         }
+
         if self.operands().len() == 1 {
             let singleton = self.operands().first().unwrap();
             write!(f, "{singleton}")?;

@@ -1,12 +1,32 @@
 use burn::prelude::*;
 use fnv::FnvHashMap;
-use std::hash::Hash;
+use std::{fmt, hash::Hash};
 
 use super::expander::{Polynomial, Variable};
 
 /// a single column matrix
 #[derive(Debug)]
 pub struct BasisTemplate<T>(Vec<Vec<Variable<T>>>);
+
+impl<T: fmt::Display> fmt::Display for BasisTemplate<T> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        let Some(first) = self.0.first() else {
+            return write!(f, "[]");
+        };
+        writeln!(f)?;
+        writeln!(f, "[")?;
+        for (i, column) in self.0.iter().enumerate() {
+            write!(f, "{i} [")?;
+            for variable in column.iter() {
+                write!(f, "{variable:>5},")?;
+            }
+
+            writeln!(f, "]")?;
+        }
+        write!(f, "]")?;
+        Ok(())
+    }
+}
 
 impl<T> BasisTemplate<T> {
     /// The tensor generated will ALWAYS have one column.

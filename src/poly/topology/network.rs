@@ -161,6 +161,25 @@ impl PolyNetworkTopology {
         &self.neurons
     }
 
+    pub fn info(&self) -> TopologyInfo {
+        let mut info = TopologyInfo::default();
+        for neuron in self.neurons.iter() {
+            let read_lock = neuron.read().unwrap();
+            match read_lock.neuron_type() {
+                NeuronType::Input => {
+                    info.num_inputs += 1;
+                }
+                NeuronType::Props(PropsType::Hidden) => {
+                    info.num_hidden += 1;
+                }
+                NeuronType::Props(PropsType::Output) => {
+                    info.num_outputs += 1;
+                }
+            }
+        }
+        info
+    }
+
     /// Get the mutation configuration for this network.
     ///
     /// # Returns
@@ -554,6 +573,13 @@ impl PolyNetworkTopology {
     pub fn to_simple_network(&self) -> SimplePolyNetwork {
         SimplePolyNetwork::from_topology(self)
     }
+}
+
+#[derive(Default, Debug, Clone, Copy)]
+pub struct TopologyInfo {
+    pub num_inputs: usize,
+    pub num_hidden: usize,
+    pub num_outputs: usize,
 }
 
 #[test]

@@ -13,6 +13,7 @@ use rayon::iter::{
     ParallelIterator as _,
 };
 use std::f32::consts::E;
+use tracing::info;
 use uuid::Uuid;
 
 /// GPU-accelerated polynomial neural network using the Burn deep learning framework.
@@ -104,9 +105,16 @@ impl<B: Backend> BurnNetwork<B> {
             .par_iter_mut()
             .for_each(|poly| poly.sort_by_exponent(0));
 
+        info!("Polynomial List:");
+        for poly in output_polynomials.iter() {
+            info!("{}", poly);
+        }
+
         let variable_basis = basis_from_poly_list(&output_polynomials);
 
         let basis_template = BasisTemplate::from_raw(variable_basis);
+
+        info!("Basis:\n{basis_template}");
         let coeff_tensor = Coefficients::new(&output_polynomials, &basis_template, &device);
 
         Self {
