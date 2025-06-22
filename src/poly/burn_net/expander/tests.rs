@@ -1,3 +1,5 @@
+use std::fmt;
+
 use crate::poly::burn_net::expander::Variable;
 
 use super::{PolyComponent, Polynomial};
@@ -5,6 +7,11 @@ use pretty_assertions::{assert_eq, assert_ne};
 
 #[derive(Clone, Copy, PartialOrd, Ord, Debug, PartialEq, Default, Eq)]
 struct X;
+impl fmt::Display for X {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "x")
+    }
+}
 
 #[test]
 pub fn add_simple_exponent() {
@@ -39,19 +46,23 @@ pub fn add_simple_binomial() {
         .with_operation(1., X, 2)
         .with_operation(1., X, 1);
 
-    //(f(x))^1 + 4x
-    let mut flattened = Polynomial::default().with_operation(4., X, 1);
+    println!("Binomial: {}", binomial);
 
-    flattened.expand(binomial, 1., 1).sort_by_exponent(X);
+    //(f(x))^1 + 4x
+    let mut flattener = Polynomial::default().with_operation(4., X, 1);
+    println!("Flattened before: {}", flattener);
+
+    flattener.expand(binomial, 1., 1).sort_by_exponent(X);
+    println!("Flattened after: {}", flattener);
 
     // should be x^2 + 5x
-    let components = flattened.components();
+    let components = flattener.components();
 
     assert!(components.len() == 2);
 
     assert_eq!(components[0], PolyComponent::simple(5., X, 1));
 
-    assert_eq!(components[1], PolyComponent::simple(1., X, 2),)
+    assert_eq!(components[1], PolyComponent::simple(1., X, 2),);
 }
 
 #[test]

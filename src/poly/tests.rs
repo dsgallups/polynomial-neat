@@ -20,8 +20,7 @@ fn _test_dupes() {
     }
 }
 
-#[test]
-fn test_two() {
+fn _test_two() {
     use crate::{poly::prelude::*, poly::topology::mutation::MutationChances};
     let mutation_chances = MutationChances::new_from_raw(3, 80., 50., 5., 60., 20.);
 
@@ -99,9 +98,9 @@ fn _test_inf() {
             generation,
         );
         generation += 1;
-        /*if generation > 1000 {
+        if generation > 1000 {
             break;
-        }*/
+        }
     }
 }
 

@@ -1,10 +1,13 @@
 use std::collections::HashSet;
 
+use rand::{SeedableRng, rngs::StdRng};
+
 use crate::activated::prelude::*;
 #[test]
 fn test_dupes() {
+    let mut rng = StdRng::seed_from_u64(12374);
     let mutation_chances = MutationChances::new_from_raw(3, 80., 50., 5., 60., 20., 10.);
-    let mut top_1 = NetworkTopology::new(20, 20, mutation_chances, &mut rand::rng());
+    let mut top_1 = NetworkTopology::new(20, 20, mutation_chances, &mut rng);
 
     let mut top_2 = top_1.deep_clone();
 

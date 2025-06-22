@@ -1,7 +1,7 @@
 use std::{
     cmp::Ordering,
     collections::HashMap,
-    fmt::Debug,
+    fmt::{self, Debug},
     hash::{BuildHasher, Hash},
     ops::{Mul, MulAssign},
 };
@@ -15,6 +15,16 @@ mod tests;
 pub struct Variable<T> {
     var: T,
     exponent: i32,
+}
+
+impl<T: fmt::Display> fmt::Display for Variable<T> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        if self.exponent == 1 {
+            write!(f, "[{}]", self.var)
+        } else {
+            write!(f, "[{}]^{}", self.var, self.exponent)
+        }
+    }
 }
 
 impl<T> Variable<T> {
@@ -50,6 +60,25 @@ impl<T: Debug + Hash + Eq> Variable<T> {
 pub struct PolyComponent<T> {
     weight: f32,
     pub(crate) operands: Vec<Variable<T>>,
+}
+
+impl<T: fmt::Display> fmt::Display for PolyComponent<T> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        if self.weight != 1. {
+            write!(f, "{}", self.weight)?;
+        }
+
+        if self.operands().len() == 1 {
+            let singleton = self.operands().first().unwrap();
+            write!(f, "{singleton}")?;
+        } else {
+            for operand in self.operands().iter() {
+                write!(f, "({operand})")?;
+            }
+        }
+
+        Ok(())
+    }
 }
 
 impl<T> Default for PolyComponent<T> {
@@ -204,6 +233,18 @@ impl<T: PartialEq> Mul for PolyComponent<T> {
 #[derive(Debug, Clone, PartialEq)]
 pub struct Polynomial<T> {
     ops: Vec<PolyComponent<T>>,
+}
+
+impl<T: fmt::Display> fmt::Display for Polynomial<T> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        for (i, op) in self.ops.iter().enumerate() {
+            write!(f, "{op}")?;
+            if i != self.ops.len() - 1 {
+                write!(f, " + ")?;
+            }
+        }
+        Ok(())
+    }
 }
 
 impl<T> Default for Polynomial<T> {
